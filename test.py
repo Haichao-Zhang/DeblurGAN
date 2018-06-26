@@ -7,7 +7,7 @@ from util.visualizer import Visualizer
 from pdb import set_trace as st
 from util import html
 from util.metrics import PSNR
-from ssim import SSIM
+from util.metrics import SSIM
 from PIL import Image
 
 opt = TestOptions().parse()
@@ -42,7 +42,7 @@ for i, data in enumerate(dataset):
 	img_path = model.get_image_paths()
 	print('process image... %s' % img_path)
 	visualizer.save_images(webpage, visuals, img_path)
-	
+
 #avgPSNR /= counter
 #avgSSIM /= counter
 #print('PSNR = %f, SSIM = %f' %

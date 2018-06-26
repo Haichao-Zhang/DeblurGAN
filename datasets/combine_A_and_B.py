@@ -16,12 +16,14 @@ for arg in vars(args):
     print('[%s] = ' % arg,  getattr(args, arg))
 
 splits = os.listdir(args.fold_A)
+splits = [""]
 
 for sp in splits:
     img_fold_A = os.path.join(args.fold_A, sp)
+    print("dir %s " % img_fold_A)
     img_fold_B = os.path.join(args.fold_B, sp)
     img_list = os.listdir(img_fold_A)
-    if args.use_AB: 
+    if args.use_AB:
         img_list = [img_path for img_path in img_list if '_A.' in img_path]
 
     num_imgs = min(args.num_imgs, len(img_list))

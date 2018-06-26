@@ -51,9 +51,9 @@ class ConditionalGAN(BaseModel):
 												lr=opt.lr, betas=(opt.beta1, 0.999))
 			self.optimizer_D = torch.optim.Adam(self.netD.parameters(),
 												lr=opt.lr, betas=(opt.beta1, 0.999))
-												
+
 			self.criticUpdates = 5 if opt.gan_type == 'wgan-gp' else 1
-			
+
 			# define loss functions
 			self.discLoss, self.contentLoss = init_loss(opt, self.Tensor)
 
@@ -89,7 +89,7 @@ class ConditionalGAN(BaseModel):
 	def backward_D(self):
 		self.loss_D = self.discLoss.get_loss(self.netD, self.real_A, self.fake_B, self.real_B)
 
-		self.loss_D.backward()
+		self.loss_D.backward(retain_graph=True)
 
 	def backward_G(self):
 		self.loss_G_GAN = self.discLoss.get_g_loss(self.netD, self.real_A, self.fake_B)
