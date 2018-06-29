@@ -4,6 +4,7 @@ from torch.nn import init
 import functools
 from torch.autograd import Variable
 import numpy as np
+import torch.nn.functional as F
 ###############################################################################
 # Functions
 ###############################################################################
@@ -74,6 +75,31 @@ def define_D(input_nc, ndf, which_model_netD,
 	netD.apply(weights_init)
 	return netD
 
+# blur estimation network
+def define_E(input_nc, ndf, which_model_netD,
+			 n_layers_D=3, norm='batch', use_sigmoid=False, gpu_ids=[], use_parallel = True):
+	netE = None
+	use_gpu = len(gpu_ids) > 0
+        netE = MLPNet()
+
+	if use_gpu:
+		netE.cuda(gpu_ids[0])
+	netE.apply(weights_init)
+	return netE
+
+
+# re-blur/observation model
+# will require convolutional operator in pytorch
+def define_B(input_nc, ndf, which_model_netD,
+			 n_layers_D=3, norm='batch', use_sigmoid=False, gpu_ids=[], use_parallel = True):
+	netB = None
+	use_gpu = len(gpu_ids) > 0
+        netB = ConvOp()
+	if use_gpu:
+		netB.cuda(gpu_ids[0])
+	netB.apply(weights_init)
+	return netB
+
 
 def print_network(net):
 	num_params = 0
@@ -86,6 +112,56 @@ def print_network(net):
 ##############################################################################
 # Classes
 ##############################################################################
+# MLP net for blur estimation
+class MLPNet(nn.Module):
+    def __init__(self):
+        super(MLPNet, self).__init__()
+        self.fc1 = nn.Linear(3* 384 * 576, 500)
+        self.fc2 = nn.Linear(500, 256)
+        self.fc3 = nn.Linear(256, 15 * 15)
+    def forward(self, x):
+        x = x.view(-1, 3 * 384 * 576)
+        x = F.relu(self.fc1(x))
+        x = F.relu(self.fc2(x))
+        x = self.fc3(x)
+        x = F.softmax(x)
+        x = x.view(-1, 13, 13)
+        return x
+
+    def name(self):
+        return "MLP"
+
+
+class ConvOp(nn.Module):
+    def __init__(self):
+        super(ConvOp, self).__init__()
+        self.downsampler = nn.Conv2d(n_planes, n_planes, kernel_size=[15, 15], stride=1, padding=0)
+
+    def forward(self, x, ker):
+
+        self.downsampler.weight.data[:] = 0
+        self.downsampler.bias.data[:] = 0
+
+        # kernel_torch = torch.from_numpy(self.kernel)
+        for i in range(n_planes):
+            self.downsampler.weight.data[i, i] = ker
+        y = self.downsampler(x)
+        return y
+
+    def name(self):
+        return "ConvOp"
+
+
+        """
+        angle = 10
+        flen = 5
+        ksize = 11
+        angle = 45
+        self.kernel = makeLinearKernel(flen, ksize, angle)
+        factor = 1
+        downsampler = nn.Conv2d(n_planes, n_planes, kernel_size=self.kernel.shape, stride=1, padding=0)
+        """
+
 
 
 # Defines the generator that consists of Resnet blocks between a few
@@ -148,6 +224,7 @@ class ResnetGenerator(nn.Module):
 			output = input + output
 			output = torch.clamp(output,min = -1,max = 1)
 		return output
+
 
 
 # Define a resnet block
