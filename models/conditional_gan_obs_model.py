@@ -117,12 +117,13 @@ class ConditionalGANObs(BaseModel):
 
 		self.loss_G = self.loss_G_GAN + self.loss_G_Content
 
-		self.loss_G.backward()
+		self.loss_G.backward(retain_graph=True)
 
         # B induces a loss while E is not
 	def backward_B(self):
-		self.loss_obs = nn.MSELoss(self.real_A, self.reblur_A) * self.opt.lambda_C
-		self.loss_obs.backward()
+                L = nn.MSELoss()
+		self.loss_obs = L(self.reblur_A, self.real_A.detach()) * self.opt.lambda_C
+		self.loss_obs.backward(retain_graph=True)
 
 	def optimize_parameters(self):
 		self.forward()
