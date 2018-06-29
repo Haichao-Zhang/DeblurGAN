@@ -120,7 +120,7 @@ class ConditionalGANObs(BaseModel):
 
         # B induces a loss while E is not
 	def backward_B(self):
-		self.loss_obs = self.contentLoss.get_loss(self.real_A, self.reblur_A) * self.opt.lambda_A
+		self.loss_obs = self.contentLoss.get_loss(self.real_A, self.reblur_A) * self.opt.lambda_C
 		self.loss_obs.backward()
 
 	def optimize_parameters(self):
@@ -145,14 +145,17 @@ class ConditionalGANObs(BaseModel):
 	def get_current_errors(self):
 		return OrderedDict([('G_GAN', self.loss_G_GAN.data[0]),
 							('G_L1', self.loss_G_Content.data[0]),
-							('D_real+fake', self.loss_D.data[0])
+							('D_real+fake', self.loss_D.data[0]),
+							('reblur_err', self.loss_obs.data[0])
 							])
 
 	def get_current_visuals(self):
 		real_A = util.tensor2im(self.real_A.data)
 		fake_B = util.tensor2im(self.fake_B.data)
 		real_B = util.tensor2im(self.real_B.data)
-		return OrderedDict([('Blurred_Train', real_A), ('Restored_Train', fake_B), ('Sharp_Train', real_B)])
+                kernel = util.tensor2psf(self.blur_est.data)
+                reblur_A = util.tensor2im(self.reblur_A.data)
+		return OrderedDict([('Blurred_Train', real_A), ('Restored_Train', fake_B), ('Sharp_Train', real_B), ('Est_ker', kernel), ('reblur', reblur_A)])
 
 	def save(self, label):
 		self.save_network(self.netG, 'G', label, self.gpu_ids)

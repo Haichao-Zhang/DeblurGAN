@@ -1,4 +1,5 @@
 from .conditional_gan_model import ConditionalGAN
+from .conditional_gan_obs_model import ConditionalGANObs
 
 def create_model(opt):
 	model = None
