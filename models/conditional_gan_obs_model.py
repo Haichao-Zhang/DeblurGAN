@@ -1,5 +1,6 @@
 import numpy as np
 import torch
+import torch.nn as nn
 import os
 from collections import OrderedDict
 from torch.autograd import Variable
@@ -120,7 +121,7 @@ class ConditionalGANObs(BaseModel):
 
         # B induces a loss while E is not
 	def backward_B(self):
-		self.loss_obs = self.contentLoss.get_loss(self.real_A, self.reblur_A) * self.opt.lambda_C
+		self.loss_obs = nn.MSELoss(self.real_A, self.reblur_A) * self.opt.lambda_C
 		self.loss_obs.backward()
 
 	def optimize_parameters(self):
