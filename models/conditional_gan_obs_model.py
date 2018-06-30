@@ -134,13 +134,12 @@ class ConditionalGANObs(BaseModel):
 			self.optimizer_D.step()
 
 		self.optimizer_G.zero_grad()
-		self.backward_G()
-		self.optimizer_G.step()
-
-                ## obs cost
                 self.optimizer_E.zero_grad()
                 self.optimizer_B.zero_grad()
+                ## obs cost
                 self.backward_B()
+		self.backward_G()
+		self.optimizer_G.step()
                 self.optimizer_E.step()
                 self.optimizer_B.step()
 
