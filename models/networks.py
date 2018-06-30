@@ -117,16 +117,18 @@ def print_network(net):
 class MLPNet(nn.Module):
     def __init__(self):
         super(MLPNet, self).__init__()
-        self.fc1 = nn.Linear(3* 256 * 256, 500)
-        self.fc2 = nn.Linear(500, 256)
-        self.fc3 = nn.Linear(256, 15 * 15)
+        self.fc0 = nn.Linear(3* 256 * 256, 1000)
+        self.fc1 = nn.Linear(1000, 500)
+        self.fc2 = nn.Linear(500, 128)
+        self.fc3 = nn.Linear(128, 61 * 61)
     def forward(self, x):
         x = x.view(-1, 3 * 256 * 256)
+        x = F.relu(self.fc0(x))
         x = F.relu(self.fc1(x))
         x = F.relu(self.fc2(x))
-        x = self.fc3(x)
-        x = F.softmax(x)
-        x = x.view(-1, 15, 15)
+        x = F.relu(self.fc3(x))
+        x = x / x.sum()
+        x = x.view(-1, 61, 61)
         return x
 
     def name(self):
@@ -137,7 +139,7 @@ class ConvOp(nn.Module):
     def __init__(self):
         super(ConvOp, self).__init__()
         self.n_planes = 3
-        self.kernel_size = [15, 15]
+        self.kernel_size = [61, 61]
         self.downsampler = nn.Conv2d(self.n_planes, self.n_planes,
                                      kernel_size=self.kernel_size,
                                      stride=1, padding=0)
