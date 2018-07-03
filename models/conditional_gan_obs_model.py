@@ -39,10 +39,12 @@ class ConditionalGANObs(BaseModel):
 										  opt.which_model_netD,
 										  opt.n_layers_D, opt.norm, use_sigmoid, self.gpu_ids, use_parallel)
 
-			self.netE = networks.define_E(opt.output_nc, opt.ndf,
-										  opt.which_model_netD,
-										  opt.n_layers_D, opt.norm, use_sigmoid, self.gpu_ids, use_parallel)
-			self.netB = networks.define_B(opt.output_nc, opt.ndf,
+			self.netE = networks.define_E(opt.input_nc * 2, opt.output_nc * 2, opt.ndf,
+                                                      opt.which_model_netD,
+                                                      opt.norm,
+                                                      not opt.no_dropout,
+                                                      self.gpu_ids, use_parallel, opt.learn_residual)
+			self.netB = networks.define_B(opt.input_nc, opt.ndf,
 										  opt.which_model_netD,
 										  opt.n_layers_D, opt.norm, use_sigmoid, self.gpu_ids, use_parallel)
 
@@ -92,7 +94,10 @@ class ConditionalGANObs(BaseModel):
 		self.real_B = Variable(self.input_B)
 
                 # blur est and re-blur
-                self.blur_est = self.netE.forward(self.real_A)
+                # self.blur_est = self.netE.forward(self.real_A)
+                input_data = torch.cat((self.real_A, self.fake_B), 1)
+
+                self.blur_est = self.netE.forward(input_data)
                 self.reblur_A = self.netB.forward(self.fake_B, self.blur_est)
 
 	# no backprop gradients

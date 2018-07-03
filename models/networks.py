@@ -76,11 +76,15 @@ def define_D(input_nc, ndf, which_model_netD,
 	return netD
 
 # blur estimation network
-def define_E(input_nc, ndf, which_model_netD,
-			 n_layers_D=3, norm='batch', use_sigmoid=False, gpu_ids=[], use_parallel = True):
+def define_E(input_nc, output_nc, ndf, which_model_netD,
+             norm='batch', use_dropout=False, gpu_ids=[], use_parallel = True,
+             learn_residual = False):
 	netE = None
 	use_gpu = len(gpu_ids) > 0
-        netE = MLPNet()
+	norm_layer = get_norm_layer(norm_type=norm)
+        # netE = MLPNet()
+        netE1 = ResnetGenerator(input_nc, output_nc, ndf, norm_layer=norm_layer, use_dropout=use_dropout, n_blocks=6, gpu_ids=gpu_ids, use_parallel=use_parallel, learn_residual = learn_residual)
+        netE = MLPNet(netE1)
 
 	if use_gpu:
 		netE.cuda(gpu_ids[0])
@@ -91,7 +95,7 @@ def define_E(input_nc, ndf, which_model_netD,
 # re-blur/observation model
 # will require convolutional operator in pytorch
 def define_B(input_nc, ndf, which_model_netD,
-			 n_layers_D=3, norm='batch', use_sigmoid=False, gpu_ids=[], use_parallel = True):
+             n_layers_D=3, norm='batch', use_sigmoid=False, gpu_ids=[], use_parallel = True):
 	netB = None
 	use_gpu = len(gpu_ids) > 0
         netB = ConvOp()
@@ -115,32 +119,44 @@ def print_network(net):
 ##############################################################################
 # MLP net for blur estimation
 class MLPNet(nn.Module):
-    def __init__(self):
+    def __init__(self, net0):
         super(MLPNet, self).__init__()
-        self.k_size = 11
-        self.fc0 = nn.Linear(3* 256 * 256, 1000)
+        self.k_size = 21
+        self.net0 = net0
+        self.fc0 = nn.Linear( 2* 3 * 256 * 256, 1000)
         self.fc1 = nn.Linear(1000, 500)
         self.fc2 = nn.Linear(500, 128)
         self.fc3 = nn.Linear(128, self.k_size * self.k_size)
+
     def forward(self, x):
-        x = x.view(-1, 3 * 256 * 256)
+        # x = x.view(-1, 3 * 256 * 256)
+        x = self.net0(x)
+        x = x.view(-1, self.num_flat_features(x))
         x = F.relu(self.fc0(x))
         x = F.relu(self.fc1(x))
         x = F.relu(self.fc2(x))
         x = F.relu(self.fc3(x))
         x = x / x.sum()
         x = x.view(-1, self.k_size, self.k_size)
+        # x = x.view(-1, np.sqrt()self.num_flat_features(x))
         return x
 
     def name(self):
         return "MLP"
+
+    def num_flat_features(self, x):
+        size = x.size()[1:]  # all dimensions except the batch dimension
+        num_features = 1
+        for s in size:
+            num_features *= s
+        return num_features
 
 
 class ConvOp(nn.Module):
     def __init__(self):
         super(ConvOp, self).__init__()
         self.n_planes = 3
-        self.kernel_size = [11, 11]
+        self.kernel_size = [21, 21]
         self.downsampler = nn.Conv2d(self.n_planes, self.n_planes,
                                      kernel_size=self.kernel_size,
                                      stride=1, padding=0)
