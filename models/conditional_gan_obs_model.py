@@ -39,7 +39,7 @@ class ConditionalGANObs(BaseModel):
 										  opt.which_model_netD,
 										  opt.n_layers_D, opt.norm, use_sigmoid, self.gpu_ids, use_parallel)
 
-			self.netE = networks.define_E(opt.input_nc * 2, opt.output_nc * 2, opt.ndf,
+			self.netE = networks.define_E(1, opt.output_nc * 2, opt.ndf,
                                                       opt.which_model_netD,
                                                       opt.norm,
                                                       not opt.no_dropout,
@@ -95,7 +95,10 @@ class ConditionalGANObs(BaseModel):
 
                 # blur est and re-blur
                 # self.blur_est = self.netE.forward(self.real_A)
-                input_data = torch.cat((self.real_A, self.fake_B), 1)
+                # input_data = torch.cat((self.real_A, self.fake_B), 1)
+                ## perform convolutional data interaction rather than concat
+                conv2_t = torch.nn.functional.conv2d 
+                input_data = conv2_t(self.real_A, self.fake_B, padding=self.real_A.size(2) / 2)
 
                 self.blur_est = self.netE.forward(input_data)
                 self.reblur_A = self.netB.forward(self.fake_B, self.blur_est)

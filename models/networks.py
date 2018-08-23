@@ -82,6 +82,23 @@ def define_E(input_nc, output_nc, ndf, which_model_netD,
 	netE = None
 	use_gpu = len(gpu_ids) > 0
 	norm_layer = get_norm_layer(norm_type=norm)
+        netE = MLPNet()
+        """
+        netE1 = ResnetGenerator(input_nc, output_nc, ndf, norm_layer=norm_layer, use_dropout=use_dropout, n_blocks=6, gpu_ids=gpu_ids, use_parallel=use_parallel, learn_residual = learn_residual)
+        netE = MLPNet(netE1)
+        """
+	if use_gpu:
+		netE.cuda(gpu_ids[0])
+	netE.apply(weights_init)
+	return netE
+
+# convolutional blur estimation network
+def define_E_fcn(input_nc, output_nc, ndf, which_model_netD,
+             norm='batch', use_dropout=False, gpu_ids=[], use_parallel = True,
+             learn_residual = False):
+	netE = None
+	use_gpu = len(gpu_ids) > 0
+	norm_layer = get_norm_layer(norm_type=norm)
         # netE = MLPNet()
         netE1 = ResnetGenerator(input_nc, output_nc, ndf, norm_layer=norm_layer, use_dropout=use_dropout, n_blocks=6, gpu_ids=gpu_ids, use_parallel=use_parallel, learn_residual = learn_residual)
         netE = MLPNet(netE1)
@@ -119,18 +136,19 @@ def print_network(net):
 ##############################################################################
 # MLP net for blur estimation
 class MLPNet(nn.Module):
-    def __init__(self, net0):
+    def __init__(self, net0=None):
         super(MLPNet, self).__init__()
         self.k_size = 21
         self.net0 = net0
-        self.fc0 = nn.Linear( 2* 3 * 256 * 256, 1000)
+        self.fc0 = nn.Linear(66049, 1000)
         self.fc1 = nn.Linear(1000, 500)
         self.fc2 = nn.Linear(500, 128)
         self.fc3 = nn.Linear(128, self.k_size * self.k_size)
 
     def forward(self, x):
         # x = x.view(-1, 3 * 256 * 256)
-        x = self.net0(x)
+        if self.net0 is not None:
+                x = self.net0(x)
         x = x.view(-1, self.num_flat_features(x))
         x = F.relu(self.fc0(x))
         x = F.relu(self.fc1(x))

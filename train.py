@@ -52,6 +52,7 @@ def train(opt, data_loader, model, visualizer):
 			model.update_learning_rate()
 			
 opt = TrainOptions().parse()
+opt.batchSize = 1
 data_loader = CreateDataLoader(opt)
 model = create_model(opt)
 visualizer = Visualizer(opt)
