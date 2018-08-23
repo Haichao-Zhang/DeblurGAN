@@ -101,7 +101,8 @@ class ConditionalGANObs(BaseModel):
                 input_data = conv2_t(self.real_A, self.fake_B, padding=self.real_A.size(2) / 2)
 
                 self.blur_est = self.netE.forward(input_data)
-                self.reblur_A = self.netB.forward(self.fake_B, self.blur_est)
+                #self.reblur_A = self.netB.forward(self.fake_B, self.blur_est)
+                self.reblur_A = self.netB.forward(self.fake_B.detach(), self.blur_est)
 
 	# no backprop gradients
 	def test(self):
@@ -130,8 +131,8 @@ class ConditionalGANObs(BaseModel):
         # B induces a loss while E is not
 	def backward_B(self):
                 L = nn.MSELoss()
- 		# self.loss_obs = L(self.reblur_A, self.real_A.detach()) * self.opt.lambda_C
-                self.loss_obs = self.contentLoss.get_loss(self.reblur_A, self.real_A.detach()) * self.opt.lambda_C
+ 		self.loss_obs = L(self.reblur_A, self.real_A.detach()) * self.opt.lambda_C
+                # self.loss_obs = self.contentLoss.get_loss(self.reblur_A, self.real_A.detach()) * self.opt.lambda_C
 
 		self.loss_obs.backward(retain_graph=True)
 
