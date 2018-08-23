@@ -89,11 +89,13 @@ class DiscLoss():
 		self.fake_AB_pool = ImagePool(opt.pool_size)
 		
 	def get_g_loss(self,net, realA, fakeB):
+                # realA is not used
 		# First, G(A) should fake the discriminator
 		pred_fake = net.forward(fakeB)
 		return self.criterionGAN(pred_fake, 1)
 		
 	def get_loss(self, net, realA, fakeB, realB):
+                # there is no need for realA
 		# Fake
 		# stop backprop to the generator by detaching fake_B
 		# Generated Image Disc Output should be close to zero
