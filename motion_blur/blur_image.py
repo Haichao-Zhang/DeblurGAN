@@ -10,13 +10,16 @@ from motion_blur.generate_trajectory import Trajectory
 
 class BlurImage(object):
 
-    def __init__(self, image_path, PSFs=None, part=None, path__to_save=None):
+    def __init__(self, image_path, PSFs=None, part=None,
+                 path_to_save_img=None,
+                 path_to_save_psf=None):
         """
 
         :param image_path: path to square, RGB image.
         :param PSFs: array of Kernels.
         :param part: int number of kernel to use.
-        :param path__to_save: folder to save results.
+        :param path_to_save_img: folder to save blurry image results.
+        :param path_to_save_psf: folder to save psfs
         """
         if os.path.isfile(image_path):
             self.image_path = image_path
@@ -28,7 +31,8 @@ class BlurImage(object):
                 raise Exception('We support only square images yet.')
         else:
             raise Exception('Not correct path to image.')
-        self.path_to_save = path__to_save
+        self.path_to_save = path_to_save_img
+        self.path_to_save_psf = path_to_save_psf
         if PSFs is None:
             if self.path_to_save is None:
                 self.PSFs = PSF(canvas=self.shape[0]).fit()
@@ -77,6 +81,7 @@ class BlurImage(object):
             blured = cv2.cvtColor(blured, cv2.COLOR_RGB2BGR)
             result.append(np.abs(blured))
         self.result = result
+        self.psf = psf
         if show or save:
             self.__plot_canvas(show, save)
 
@@ -102,19 +107,25 @@ class BlurImage(object):
             elif save:
                 if self.path_to_save is None:
                     raise Exception('Please create Trajectory instance with path_to_save')
+
                 cv2.imwrite(os.path.join(self.path_to_save, self.image_path.split('/')[-1]), self.result[0] * 255)
+                cv2.imwrite(os.path.join(self.path_to_save_psf, self.image_path.split('/')[-1]), self.psf/self.psf.max() * 255)
             elif show:
                 plt.show()
 
 
 if __name__ == '__main__':
     folder = '/media/DATA/data/blurred_sharp_org/blurred_sharp/sharp'
-    folder_to_save = '/media/DATA/data/blurred_sharp_org/blurred_sharp/test'
+    folder_to_save = '/media/DATA/data/blurred_sharp_org/blurred_sharp/mine/blurry'
+    folder_to_save_psf = '/media/DATA/data/blurred_sharp_org/blurred_sharp/mine/psf'
+
     params = [0.01, 0.009, 0.008, 0.007, 0.005, 0.003]
     for path in os.listdir(folder):
         print(path)
-        trajectory = Trajectory(canvas=64, max_len=60, expl=np.random.choice(params)).fit()
-        psf = PSF(canvas=64, trajectory=trajectory).fit()
-        BlurImage(os.path.join(folder, path), PSFs=psf,
-                  path__to_save=folder_to_save, part=np.random.choice([1, 2, 3])).\
+        trajectory = Trajectory(canvas=55, max_len=50, expl=np.random.choice(params)).fit()
+        psf = PSF(canvas=55, trajectory=trajectory).fit()
+        BlurImage(os.path.join(folder, path), PSFs=[psf[-1]],
+                  path_to_save_img=folder_to_save,
+                  path_to_save_psf=folder_to_save_psf,
+                  part=np.random.choice([0])).\
             blur_image(save=True)
