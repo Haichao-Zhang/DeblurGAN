@@ -93,5 +93,5 @@ class PSF(object):
 
 
 if __name__ == '__main__':
-    psf = PSF(canvas=128, path_to_save='/Users/mykolam/PycharmProjects/University/RandomMotionBlur/psf.png')
+    psf = PSF(canvas=128, path_to_save='/media/DATA/psf.png')
     psf.fit(show=True, save=True)

@@ -143,6 +143,7 @@ class ConditionalGANObs(BaseModel):
                 self.optimizer_B.zero_grad()
                 ## obs cost
                 self.backward_B()
+                self.backward_E() # missing this before
 		self.backward_G()
 		self.optimizer_G.step()
                 self.optimizer_E.step()

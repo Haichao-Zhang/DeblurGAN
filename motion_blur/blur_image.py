@@ -108,8 +108,8 @@ class BlurImage(object):
 
 
 if __name__ == '__main__':
-    folder = '/Users/mykolam/PycharmProjects/University/DeblurGAN2/results_sharp'
-    folder_to_save = '/Users/mykolam/PycharmProjects/University/DeblurGAN2/blured'
+    folder = '/media/DATA/data/blurred_sharp_org/blurred_sharp/sharp'
+    folder_to_save = '/media/DATA/data/blurred_sharp_org/blurred_sharp/test'
     params = [0.01, 0.009, 0.008, 0.007, 0.005, 0.003]
     for path in os.listdir(folder):
         print(path)

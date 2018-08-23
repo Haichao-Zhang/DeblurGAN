@@ -87,6 +87,7 @@ class ConditionalGAN(BaseModel):
 		return self.image_paths
 
 	def backward_D(self):
+                # real_A: blurry image
 		self.loss_D = self.discLoss.get_loss(self.netD, self.real_A, self.fake_B, self.real_B)
 
 		self.loss_D.backward(retain_graph=True)
