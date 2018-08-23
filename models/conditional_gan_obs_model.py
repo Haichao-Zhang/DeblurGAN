@@ -127,7 +127,9 @@ class ConditionalGANObs(BaseModel):
         # B induces a loss while E is not
 	def backward_B(self):
                 L = nn.MSELoss()
-		self.loss_obs = L(self.reblur_A, self.real_A.detach()) * self.opt.lambda_C
+ 		# self.loss_obs = L(self.reblur_A, self.real_A.detach()) * self.opt.lambda_C
+                self.loss_obs = self.contentLoss.get_loss(self.reblur_A, self.real_A.detach()) * self.opt.lambda_C
+
 		self.loss_obs.backward(retain_graph=True)
 
 	def optimize_parameters(self):
@@ -143,7 +145,6 @@ class ConditionalGANObs(BaseModel):
                 self.optimizer_B.zero_grad()
                 ## obs cost
                 self.backward_B()
-                self.backward_E() # missing this before
 		self.backward_G()
 		self.optimizer_G.step()
                 self.optimizer_E.step()
