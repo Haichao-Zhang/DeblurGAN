@@ -10,7 +10,7 @@ def create_model(opt):
 		model = TestModel()
 	else:
 		# model = ConditionalGANObs()
-		# model = ConditionalGAN()
+		#model = ConditionalGAN()
 		model = ConditionalDualGAN()
 	model.initialize(opt)
 	print("model [%s] was created" % (model.name()))

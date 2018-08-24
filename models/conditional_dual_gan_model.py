@@ -111,7 +111,9 @@ class ConditionalDualGAN(BaseModel):
                 # self.blur_est = self.netE.forward(self.real_A)
                 # input_data = torch.cat((self.real_A, self.fake_B), 1)
                 ## perform convolutional data interaction rather than concat
-                conv2_t = torch.nn.functional.conv2d 
+                conv2_t = torch.nn.functional.conv2d
+                # print(self.real_A)
+                # print(self.fake_B)
                 input_data = conv2_t(self.real_A, self.fake_B, padding=self.real_A.size(2) / 2)
 
                 self.blur_est = self.netE.forward(input_data)
@@ -144,9 +146,9 @@ class ConditionalDualGAN(BaseModel):
 
         # B induces a loss while E is not
 	def backward_B(self):
-                # L = nn.MSELoss()
- 		# self.loss_obs = L(self.reblur_A, self.real_A.detach()) * self.opt.lambda_C
-                self.loss_obs = self.contentLoss.get_loss(self.reblur_A, self.real_A.detach()) * self.opt.lambda_C
+                L = nn.MSELoss()
+ 		self.loss_obs = L(self.reblur_A, self.real_A.detach()) * self.opt.lambda_C
+                # self.loss_obs = self.contentLoss.get_loss(self.reblur_A, self.real_A.detach()) * self.opt.lambda_C
 
 		self.loss_obs.backward(retain_graph=True)
 

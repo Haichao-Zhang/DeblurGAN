@@ -18,7 +18,7 @@ def tensor2im(image_tensor, imtype=np.uint8):
 def tensor2psf(image_tensor, imtype=np.uint8):
 	image_numpy = image_tensor[0].cpu().float().numpy()
 	image_numpy = (image_numpy) / image_numpy.max()
-        print(image_numpy)
+        # print("img %s " % image_numpy)
         image_numpy = image_numpy * 255
         image_numpy = np.expand_dims(image_numpy, axis=3)
 	return image_numpy.astype(imtype)
