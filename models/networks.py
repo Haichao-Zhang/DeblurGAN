@@ -172,6 +172,57 @@ class MLPNet(nn.Module):
 
 class ConvOp(nn.Module):
     def __init__(self):
+        super(ConvOpT, self).__init__()
+        self.n_planes = 3
+        self.kernel_size = [5, 5] # connect with an option
+        """
+        self.downsampler = nn.Conv2d(self.n_planes, self.n_planes,
+                                     kernel_size=self.kernel_size,
+                                     stride=1, padding=0)
+        """
+        # convert channels to batch dim
+        self.downsampler = nn.ConvTranspose2d(1, 1,
+                                     kernel_size=self.kernel_size,
+                                     stride=1, padding=0)
+
+        preserve_size = True
+        if preserve_size:
+            if  self.kernel_size[0] % 2 == 1:
+                pad = int((self.kernel_size[0] - 1) / 2.)
+            else:
+                pad = int((self.kernel_size[0] - factor) / 2.)
+
+            self.padding = nn.ZeroPad2d(-pad)
+        self.preserve_size = preserve_size
+
+    def forward(self, x, ker):
+        if self.preserve_size:
+            # x_pad = self.padding(x)
+            x_pad = x
+        else:
+            x_pad = x
+
+        self.downsampler.weight.data[:] = 0
+        self.downsampler.bias.data[:] = 0
+
+        # kernel_torch = torch.from_numpy(self.kernel)
+        for i in range(1):
+            self.downsampler.weight.data[i, i] = ker
+
+        # channel to batch
+        x_pad = x_pad.transpose(0, 1)
+        y = self.downsampler(x_pad)
+        # batch to channel
+        y = y.transpose(0, 1)
+        y = self.padding(y) # cropping, removing the boundary
+        return y
+
+    def name(self):
+        return "ConvOp"
+
+
+class CorrOp(nn.Module):
+    def __init__(self):
         super(ConvOp, self).__init__()
         self.n_planes = 3
         self.kernel_size = [25, 25] # connect with an option
@@ -216,7 +267,7 @@ class ConvOp(nn.Module):
         return y
 
     def name(self):
-        return "ConvOp"
+        return "CorrOp"
 
 
         """
