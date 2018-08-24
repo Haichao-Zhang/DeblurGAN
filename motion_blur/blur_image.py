@@ -122,8 +122,8 @@ if __name__ == '__main__':
     params = [0.01, 0.009, 0.008, 0.007, 0.005, 0.003]
     for path in os.listdir(folder):
         print(path)
-        trajectory = Trajectory(canvas=55, max_len=50, expl=np.random.choice(params)).fit()
-        psf = PSF(canvas=55, trajectory=trajectory).fit()
+        trajectory = Trajectory(canvas=25, max_len=11, expl=np.random.choice(params)).fit()
+        psf = PSF(canvas=25, trajectory=trajectory).fit()
         BlurImage(os.path.join(folder, path), PSFs=[psf[-1]],
                   path_to_save_img=folder_to_save,
                   path_to_save_psf=folder_to_save_psf,

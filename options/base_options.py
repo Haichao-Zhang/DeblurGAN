@@ -13,6 +13,7 @@ class BaseOptions():
 		self.parser.add_argument('--batchSize', type=int, default=1, help='input batch size')
 		self.parser.add_argument('--loadSizeX', type=int, default=640, help='scale images to this size')
 		self.parser.add_argument('--loadSizeY', type=int, default=360, help='scale images to this size')
+		self.parser.add_argument('--kerSize', type=int, default=25, help='scale images to this size')
 		self.parser.add_argument('--resizeRatio', type=float, default=1, help='scale all data according to this ratio')
 		self.parser.add_argument('--fineSize', type=int, default=256, help='then crop to this size')
 		self.parser.add_argument('--input_nc', type=int, default=3, help='# of input image channels')

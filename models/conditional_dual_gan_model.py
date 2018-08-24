@@ -15,7 +15,7 @@ try:
 except NameError:
 	xrange = range  # Python 3
 
-class ConditionalGANObs(BaseModel):
+class ConditionalDualGAN(BaseModel):
 	def name(self):
 		return 'ConditionalGANModelObs'
 
@@ -29,7 +29,7 @@ class ConditionalGANObs(BaseModel):
 								   opt.fineSize, opt.fineSize)
 
                 # blur kernels (single channel)
-		self.input_K = self.Tensor(opt.batchSize, 1, 55, 55) # generalize later
+		self.input_K = self.Tensor(opt.batchSize, 1, opt.kerSize, opt.kerSize) # generalize later
 
 		# load/define networks
 		#Temp Fix for nn.parallel as nn.parallel crashes oc calculating gradient penalty
@@ -144,22 +144,29 @@ class ConditionalGANObs(BaseModel):
 
         # B induces a loss while E is not
 	def backward_B(self):
-                L = nn.MSELoss()
- 		self.loss_obs = L(self.reblur_A, self.real_A.detach()) * self.opt.lambda_C
-                # self.loss_obs = self.contentLoss.get_loss(self.reblur_A, self.real_A.detach()) * self.opt.lambda_C
+                # L = nn.MSELoss()
+ 		# self.loss_obs = L(self.reblur_A, self.real_A.detach()) * self.opt.lambda_C
+                self.loss_obs = self.contentLoss.get_loss(self.reblur_A, self.real_A.detach()) * self.opt.lambda_C
 
 		self.loss_obs.backward(retain_graph=True)
 
 
 	def backward_D_psf(self):
-		self.loss_D_psf = self.discLoss.get_loss(self.netD_psf, None, self.blur_est, self.real_K)
+		self.loss_D_psf = self.discLoss.get_loss(self.netD_psf, None, self.blur_est.unsqueeze(0), self.real_K)
 
 		self.loss_D_psf.backward(retain_graph=True)
 
 	def backward_G_psf(self):
-		self.loss_G_GAN_psf = self.discLoss.get_g_loss(self.netD_psf, None,  self.blur_est)
+		self.loss_G_GAN_psf = self.discLoss.get_g_loss(self.netD_psf, None,  self.blur_est.unsqueeze(0))
 		# Second, G(A) = B
-		self.loss_G_Content_psf = self.contentLoss.get_loss(self.blur_est, self.real_K) * self.opt.lambda_K
+                # L = nn.MSELoss()
+		#self.loss_G_Content_psf = L(self.blur_est.unsqueeze(0), self.real_K) * self.opt.lambda_K
+                k_est = self.blur_est.unsqueeze(0)
+                k_est3 = torch.cat((k_est, k_est, k_est), 1)
+                k_real3 = torch.cat((self.real_K, self.real_K, self.real_K), 1)
+
+		self.loss_G_Content_psf = self.contentLoss.get_loss(
+                        k_est3, k_real3) * self.opt.lambda_K
 
 		self.loss_G_psf = self.loss_G_GAN_psf + self.loss_G_Content_psf
 
@@ -192,6 +199,8 @@ class ConditionalGANObs(BaseModel):
 		return OrderedDict([('G_GAN', self.loss_G_GAN.data[0]),
 							('G_L1', self.loss_G_Content.data[0]),
 							('D_real+fake', self.loss_D.data[0]),
+							('G_pdf', self.loss_G_psf.data[0]),
+							('D_real+fake_pdf', self.loss_D_psf.data[0]),
 							('reblur_err', self.loss_obs.data[0])
 							])
 

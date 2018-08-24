@@ -138,7 +138,7 @@ def print_network(net):
 class MLPNet(nn.Module):
     def __init__(self, net0=None):
         super(MLPNet, self).__init__()
-        self.k_size = 21
+        self.k_size = 25 # connect with a option
         self.net0 = net0
         self.fc0 = nn.Linear(66049, 1000)
         self.fc1 = nn.Linear(1000, 500)
@@ -174,7 +174,7 @@ class ConvOp(nn.Module):
     def __init__(self):
         super(ConvOp, self).__init__()
         self.n_planes = 3
-        self.kernel_size = [21, 21]
+        self.kernel_size = [25, 25] # connect with an option
         self.downsampler = nn.Conv2d(self.n_planes, self.n_planes,
                                      kernel_size=self.kernel_size,
                                      stride=1, padding=0)
