@@ -138,7 +138,10 @@ class ConditionalDualGAN(BaseModel):
 	def backward_G(self):
 		self.loss_G_GAN = self.discLoss.get_g_loss(self.netD, self.real_A, self.fake_B)
 		# Second, G(A) = B
-		self.loss_G_Content = self.contentLoss.get_loss(self.fake_B, self.real_B) * self.opt.lambda_A
+                fake_B = torch.cat((self.fake_B, self.fake_B, self.fake_B), 1)
+                real_B= torch.cat((self.real_B, self.real_B, self.real_B), 1)
+
+		self.loss_G_Content = self.contentLoss.get_loss(fake_B, real_B) * self.opt.lambda_A
 
 		self.loss_G = self.loss_G_GAN + self.loss_G_Content
 

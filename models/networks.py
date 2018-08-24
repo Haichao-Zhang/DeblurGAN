@@ -172,9 +172,9 @@ class MLPNet(nn.Module):
 
 class ConvOp(nn.Module):
     def __init__(self):
-        super(ConvOpT, self).__init__()
+        super(ConvOp, self).__init__()
         self.n_planes = 3
-        self.kernel_size = [5, 5] # connect with an option
+        self.kernel_size = [25, 25] # connect with an option
         """
         self.downsampler = nn.Conv2d(self.n_planes, self.n_planes,
                                      kernel_size=self.kernel_size,
