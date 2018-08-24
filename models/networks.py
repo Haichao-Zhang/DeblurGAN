@@ -175,7 +175,13 @@ class ConvOp(nn.Module):
         super(ConvOp, self).__init__()
         self.n_planes = 3
         self.kernel_size = [25, 25] # connect with an option
+        """
         self.downsampler = nn.Conv2d(self.n_planes, self.n_planes,
+                                     kernel_size=self.kernel_size,
+                                     stride=1, padding=0)
+        """
+        # convert channels to batch dim
+        self.downsampler = nn.Conv2d(1, 1,
                                      kernel_size=self.kernel_size,
                                      stride=1, padding=0)
 
@@ -199,9 +205,14 @@ class ConvOp(nn.Module):
         self.downsampler.bias.data[:] = 0
 
         # kernel_torch = torch.from_numpy(self.kernel)
-        for i in range(self.n_planes):
+        for i in range(1):
             self.downsampler.weight.data[i, i] = ker
+
+        # channel to batch
+        x_pad = x_pad.transpose(0, 1)
         y = self.downsampler(x_pad)
+        # batch to channel
+        y = y.transpose(0, 1)
         return y
 
     def name(self):
