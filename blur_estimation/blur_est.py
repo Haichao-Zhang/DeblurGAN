@@ -94,7 +94,7 @@ def get_K(img, b_img, k_sz):
     k[k < 0] = 0
     # normalize
     k = k / k.sum()
-    return torch.Tensor(k)
+    return torch.Tensor(k).cuda()
 
 
 def test_get_K():

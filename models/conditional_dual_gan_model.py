@@ -120,7 +120,7 @@ class ConditionalDualGAN(BaseModel):
 
                 self.blur_est = self.netE.forward(input_data)
                 """
-                self.blur_est = get_K(self.real_A[0,0,:,:], self.fake_B[0,0,:,:], 25)
+                self.blur_est = get_K(self.real_A[0,0,:,:], self.fake_B[0,0,:,:], 25).unsqueeze(0)
                 #self.reblur_A = self.netB.forward(self.fake_B, self.blur_est)
                 self.reblur_A = self.netB.forward(self.fake_B.detach(), self.blur_est)
 
