@@ -9,6 +9,7 @@ from util.image_pool import ImagePool
 from .base_model import BaseModel
 from . import networks
 from .losses import init_loss
+from blur_estimation.blur_est import get_K
 
 try:
 	xrange          # Python2
@@ -114,9 +115,12 @@ class ConditionalDualGAN(BaseModel):
                 conv2_t = torch.nn.functional.conv2d
                 # print(self.real_A)
                 # print(self.fake_B)
+                """"
                 input_data = conv2_t(self.real_A, self.fake_B, padding=self.real_A.size(2) / 2)
 
                 self.blur_est = self.netE.forward(input_data)
+                """
+                self.blur_est = get_K(self.real_A[0,0,:,:], self.fake_B[0,0,:,:], 25)
                 #self.reblur_A = self.netB.forward(self.fake_B, self.blur_est)
                 self.reblur_A = self.netB.forward(self.fake_B.detach(), self.blur_est)
 
