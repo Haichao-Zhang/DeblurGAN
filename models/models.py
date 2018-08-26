@@ -9,9 +9,9 @@ def create_model(opt):
 		from .test_model import TestModel
 		model = TestModel()
 	else:
-		model = ConditionalGANObs()
+		#model = ConditionalGANObs()
 		#model = ConditionalGAN()
-		#model = ConditionalDualGAN()
+		model = ConditionalDualGAN()
 	model.initialize(opt)
 	print("model [%s] was created" % (model.name()))
 	return model

@@ -115,14 +115,16 @@ class ConditionalDualGAN(BaseModel):
                 conv2_t = torch.nn.functional.conv2d
                 # print(self.real_A)
                 # print(self.fake_B)
-                """"
-                input_data = conv2_t(self.real_A, self.fake_B, padding=self.real_A.size(2) / 2)
-
+                
+                #input_data = conv2_t(self.real_A, self.fake_B, padding=self.real_A.size(2) / 2)
+                input_data = self.real_A
                 self.blur_est = self.netE.forward(input_data)
+                
                 """
                 self.blur_est = get_K(self.real_A[0,0,:,:], self.fake_B[0,0,:,:], 25).unsqueeze(0)
-                #self.reblur_A = self.netB.forward(self.fake_B, self.blur_est)
-                self.reblur_A = self.netB.forward(self.fake_B.detach(), self.blur_est)
+                """
+                self.reblur_A = self.netB.forward(self.fake_B, self.blur_est)
+                #self.reblur_A = self.netB.forward(self.fake_B.detach(), self.blur_est)
 
 	# no backprop gradients
 	def test(self):
@@ -142,10 +144,10 @@ class ConditionalDualGAN(BaseModel):
 	def backward_G(self):
 		self.loss_G_GAN = self.discLoss.get_g_loss(self.netD, self.real_A, self.fake_B)
 		# Second, G(A) = B
-                fake_B = torch.cat((self.fake_B, self.fake_B, self.fake_B), 1)
-                real_B= torch.cat((self.real_B, self.real_B, self.real_B), 1)
+                #fake_B = torch.cat((self.fake_B, self.fake_B, self.fake_B), 1)
+                #real_B= torch.cat((self.real_B, self.real_B, self.real_B), 1)
 
-		self.loss_G_Content = self.contentLoss.get_loss(fake_B, real_B) * self.opt.lambda_A
+		self.loss_G_Content = self.contentLoss.get_loss(self.fake_B, self.real_B) * self.opt.lambda_A
 
 		self.loss_G = self.loss_G_GAN + self.loss_G_Content
 

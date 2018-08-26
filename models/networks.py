@@ -140,10 +140,10 @@ class MLPNet(nn.Module):
         super(MLPNet, self).__init__()
         self.k_size = 25 # connect with a option
         self.net0 = net0
-        self.fc0 = nn.Linear(66049, 1000)
-        self.fc1 = nn.Linear(1000, 500)
-        self.fc2 = nn.Linear(500, 128)
-        self.fc3 = nn.Linear(128, self.k_size * self.k_size)
+        self.fc0 = nn.Linear(196608, 1000)
+        self.fc1 = nn.Linear(1000, 625)
+        self.fc2 = nn.Linear(625, 625)
+        self.fc3 = nn.Linear(625, self.k_size * self.k_size)
 
     def forward(self, x):
         # x = x.view(-1, 3 * 256 * 256)

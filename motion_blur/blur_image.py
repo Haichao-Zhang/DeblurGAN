@@ -69,15 +69,18 @@ class BlurImage(object):
                 blured = cv2.cvtColor(blured, cv2.COLOR_RGB2BGR)
                 result.append(np.abs(blured))
         else:
+            print("new----------")
             psf = psf[0]
             tmp = np.pad(psf, delta // 2, 'constant')
-            cv2.normalize(tmp, tmp, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
+            tmp = tmp.astype(float)
+            tmp = tmp / tmp.sum()
+            #cv2.normalize(tmp, tmp, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
             blured = cv2.normalize(self.original, self.original, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX,
                                    dtype=cv2.CV_32F)
             blured[:, :, 0] = np.array(signal.fftconvolve(blured[:, :, 0], tmp, 'same'))
             blured[:, :, 1] = np.array(signal.fftconvolve(blured[:, :, 1], tmp, 'same'))
             blured[:, :, 2] = np.array(signal.fftconvolve(blured[:, :, 2], tmp, 'same'))
-            blured = cv2.normalize(blured, blured, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
+            # blured = cv2.normalize(blured, blured, alpha=0, beta=1, norm_type=cv2.NORM_MINMAX, dtype=cv2.CV_32F)
             blured = cv2.cvtColor(blured, cv2.COLOR_RGB2BGR)
             result.append(np.abs(blured))
         self.result = result
