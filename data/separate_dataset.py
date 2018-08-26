@@ -43,11 +43,12 @@ class SeparateDataset(BaseDataset):
         B = Image.open(B_path).convert('RGB')
         B = self.transform(B)
 
-        A = A[0, :, :].unsqueeze(0)
-        B = B[0, :, :].unsqueeze(0)
+        #A = A[0, :, :].unsqueeze(0)
+        #B = B[0, :, :].unsqueeze(0)
 
         w = A.size(2)
         h = A.size(1)
+        
         # perform cropping
         w_offset = random.randint(0, max(0, w - self.opt.fineSize - 1))
         h_offset = random.randint(0, max(0, h - self.opt.fineSize - 1))

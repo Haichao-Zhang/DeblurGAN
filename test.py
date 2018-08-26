@@ -9,12 +9,15 @@ from util import html
 from util.metrics import PSNR
 from util.metrics import SSIM
 from PIL import Image
+import cv2
 
 opt = TestOptions().parse()
 opt.nThreads = 1   # test code only supports nThreads = 1
 opt.batchSize = 1  # test code only supports batchSize = 1
 opt.serial_batches = True  # no shuffle
 opt.no_flip = True  # no flip
+opt.no_clip = True
+opt.resize_or_crop = 'scale_width'
 
 data_loader = CreateDataLoader(opt)
 dataset = data_loader.load_data()
@@ -42,6 +45,7 @@ for i, data in enumerate(dataset):
 	img_path = model.get_image_paths()
 	print('process image... %s' % img_path)
 	visualizer.save_images(webpage, visuals, img_path)
+        cv2.imwrite('./db.bmp', visuals['fake_B'])
 
 #avgPSNR /= counter
 #avgSSIM /= counter
