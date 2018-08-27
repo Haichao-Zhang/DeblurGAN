@@ -64,8 +64,10 @@ class SeparateDataset(BaseDataset):
         K_arr = K.numpy()
 
         K_arr = K_arr / sum(K_arr.reshape(-1))
+        #print("K_arr numpy %s " % K_arr)
 
         K = torch.Tensor(K_arr)
+        #print("K torch %s " % K)
         # avoid resizing image only
         # AB = AB.resize((self.opt.loadSizeX * 2, self.opt.loadSizeY), Image.BICUBIC)
         # A = self.transform(A)

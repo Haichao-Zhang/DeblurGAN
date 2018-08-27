@@ -92,14 +92,22 @@ class ConditionalDualGAN(BaseModel):
 		networks.print_network(self.netG)
 		if self.isTrain:
 			networks.print_network(self.netD)
+ 		print('-----------------------------------------------')
+		networks.print_network(self.netE)
+		if self.isTrain:
+			networks.print_network(self.netB)
+			networks.print_network(self.netD_psf)
 		print('-----------------------------------------------')
+
 
 	def set_input(self, input):
 		AtoB = self.opt.which_direction == 'AtoB'
 		input_A = input['A' if AtoB else 'B']
 		input_B = input['B' if AtoB else 'A']
+                input_K = input['K']
 		self.input_A.resize_(input_A.size()).copy_(input_A)
 		self.input_B.resize_(input_B.size()).copy_(input_B)
+		self.input_K.resize_(input_K.size()).copy_(input_K)
 		self.image_paths = input['A_paths' if AtoB else 'B_paths']
 
 	def forward(self):
@@ -155,7 +163,7 @@ class ConditionalDualGAN(BaseModel):
 		self.loss_G.backward(retain_graph=True)
 
         # B induces a loss while E is not
-	def backward_B(self):
+	def backward_reblur(self):
                 L = nn.MSELoss()
  		self.loss_obs = L(self.reblur_A, self.real_A.detach()) * self.opt.lambda_C
                 # self.loss_obs = self.contentLoss.get_loss(self.reblur_A, self.real_A.detach()) * self.opt.lambda_C
@@ -172,23 +180,23 @@ class ConditionalDualGAN(BaseModel):
 		# Second, G(A) = B
                 k_est = self.blur_est.unsqueeze(0)
                 # k_est = self.real_K
-                self.real_K = k_est.detach()
+                #self.real_K = k_est.detach()
  		self.loss_G_GAN_psf = self.discLoss.get_g_loss(self.netD_psf,
                                                                None, k_est)
-                L = nn.MSELoss()
-		self.loss_G_Content_psf = L(k_est, self.real_K) * self.opt.lambda_K
+                #L = nn.MSELoss()
+		#self.loss_G_Content_psf = L(k_est, self.real_K) * self.opt.lambda_K
 
                 k_est3 = torch.cat((k_est, k_est, k_est), 1)
                 k_real3 = torch.cat((self.real_K, self.real_K, self.real_K), 1)
 
                 #print(k_est)
                 #print(self.real_K)
-                """
+                
 		self.loss_G_Content_psf = self.contentLoss.get_loss(
                         k_est3, k_real3) * self.opt.lambda_K
-                """
-                print(self.loss_G_GAN_psf)
-                print(self.loss_G_Content_psf)
+                
+                #print(self.loss_G_GAN_psf)
+                #print(self.loss_G_Content_psf)
 		self.loss_G_psf = self.loss_G_GAN_psf + self.loss_G_Content_psf
 
 		self.loss_G_psf.backward(retain_graph=True)
@@ -207,14 +215,14 @@ class ConditionalDualGAN(BaseModel):
 
 		self.optimizer_G.zero_grad()
                 self.optimizer_E.zero_grad()
-                self.optimizer_B.zero_grad()
+                #self.optimizer_B.zero_grad()
                 ## obs cost
-                self.backward_B()
+                self.backward_reblur()
 		self.backward_G()
                 self.backward_G_psf()
 		self.optimizer_G.step()
-                self.optimizer_E.step()
-                self.optimizer_B.step()
+                self.optimizer_E.step() # G for kernel
+                #self.optimizer_B.step()
 
 	def get_current_errors(self):
 		return OrderedDict([('G_GAN', self.loss_G_GAN.data[0]),

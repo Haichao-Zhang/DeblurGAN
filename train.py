@@ -17,6 +17,7 @@ def train(opt, data_loader, model, visualizer):
 			iter_start_time = time.time()
 			total_steps += opt.batchSize
 			epoch_iter += opt.batchSize
+                        #print("data %s " % data['K'])
 			model.set_input(data)
 			model.optimize_parameters()
 
