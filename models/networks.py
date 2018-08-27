@@ -154,9 +154,12 @@ class MLPNet(nn.Module):
         x = F.relu(self.fc1(x))
         x = F.relu(self.fc2(x))
         x = F.relu(self.fc3(x))
+        x = x + 0.00000000001
+        #print(x)
         x = x / x.sum()
         x = x.view(-1, self.k_size, self.k_size)
         # x = x.view(-1, np.sqrt()self.num_flat_features(x))
+        #print(x)
         return x
 
     def name(self):

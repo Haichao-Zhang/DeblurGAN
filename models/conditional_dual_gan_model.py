@@ -119,6 +119,7 @@ class ConditionalDualGAN(BaseModel):
                 #input_data = conv2_t(self.real_A, self.fake_B, padding=self.real_A.size(2) / 2)
                 input_data = self.real_A
                 self.blur_est = self.netE.forward(input_data)
+                #print(self.blur_est)
                 
                 """
                 self.blur_est = get_K(self.real_A[0,0,:,:], self.fake_B[0,0,:,:], 25).unsqueeze(0)
@@ -137,7 +138,7 @@ class ConditionalDualGAN(BaseModel):
 		return self.image_paths
 
 	def backward_D(self):
-		self.loss_D = self.discLoss.get_loss(self.netD, self.real_A, self.fake_B, self.real_B)
+		self.loss_D = self.discLoss.get_loss(self.netD, self.real_A, self.fake_B.detach(), self.real_B)
 
 		self.loss_D.backward(retain_graph=True)
 
@@ -163,22 +164,31 @@ class ConditionalDualGAN(BaseModel):
 
 
 	def backward_D_psf(self):
-		self.loss_D_psf = self.discLoss.get_loss(self.netD_psf, None, self.blur_est.unsqueeze(0), self.real_K)
+		self.loss_D_psf = self.discLoss.get_loss(self.netD_psf, None, self.blur_est.unsqueeze(0).detach(), self.real_K)
 
 		self.loss_D_psf.backward(retain_graph=True)
 
 	def backward_G_psf(self):
-		self.loss_G_GAN_psf = self.discLoss.get_g_loss(self.netD_psf, None,  self.blur_est.unsqueeze(0))
 		# Second, G(A) = B
-                # L = nn.MSELoss()
-		#self.loss_G_Content_psf = L(self.blur_est.unsqueeze(0), self.real_K) * self.opt.lambda_K
                 k_est = self.blur_est.unsqueeze(0)
+                # k_est = self.real_K
+                self.real_K = k_est.detach()
+ 		self.loss_G_GAN_psf = self.discLoss.get_g_loss(self.netD_psf,
+                                                               None, k_est)
+                L = nn.MSELoss()
+		self.loss_G_Content_psf = L(k_est, self.real_K) * self.opt.lambda_K
+
                 k_est3 = torch.cat((k_est, k_est, k_est), 1)
                 k_real3 = torch.cat((self.real_K, self.real_K, self.real_K), 1)
 
+                #print(k_est)
+                #print(self.real_K)
+                """
 		self.loss_G_Content_psf = self.contentLoss.get_loss(
                         k_est3, k_real3) * self.opt.lambda_K
-
+                """
+                print(self.loss_G_GAN_psf)
+                print(self.loss_G_Content_psf)
 		self.loss_G_psf = self.loss_G_GAN_psf + self.loss_G_Content_psf
 
 		self.loss_G_psf.backward(retain_graph=True)
@@ -210,7 +220,7 @@ class ConditionalDualGAN(BaseModel):
 		return OrderedDict([('G_GAN', self.loss_G_GAN.data[0]),
 							('G_L1', self.loss_G_Content.data[0]),
 							('D_real+fake', self.loss_D.data[0]),
-							('G_pdf', self.loss_G_psf.data[0]),
+							('G_psf', self.loss_G_psf.data[0]),
 							('D_real+fake_pdf', self.loss_D_psf.data[0]),
 							('reblur_err', self.loss_obs.data[0])
 							])

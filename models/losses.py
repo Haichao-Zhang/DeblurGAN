@@ -166,6 +166,9 @@ class DiscLossWGANGP(DiscLossLS):
 		# Combined loss
 		self.loss_D = self.D_fake - self.D_real
 		gradient_penalty = self.calc_gradient_penalty(net, realB.data, fakeB.data)
+                #print("D fake %s D real %s" % (self.D_fake, self.D_real))
+                #print("loss_D %s" % self.loss_D)
+                #print("grad %s" % gradient_penalty)
 		return self.loss_D + gradient_penalty
 
 
