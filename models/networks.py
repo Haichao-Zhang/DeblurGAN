@@ -87,6 +87,7 @@ def define_E(input_nc, output_nc, ndf, which_model_netD,
         netE1 = ResnetGenerator(input_nc, output_nc, ndf, norm_layer=norm_layer, use_dropout=use_dropout, n_blocks=6, gpu_ids=gpu_ids, use_parallel=use_parallel, learn_residual = learn_residual)
         netE = MLPNet(netE1)
         """
+        
 	if use_gpu:
 		netE.cuda(gpu_ids[0])
 	netE.apply(weights_init)
@@ -140,10 +141,10 @@ class MLPNet(nn.Module):
         super(MLPNet, self).__init__()
         self.k_size = 25 # connect with a option
         self.net0 = net0
-        self.fc0 = nn.Linear(196608, 1000)
-        self.fc1 = nn.Linear(1000, 625)
-        self.fc2 = nn.Linear(625, 625)
-        self.fc3 = nn.Linear(625, self.k_size * self.k_size)
+        self.fc0 = nn.Linear(66049, 1000)
+        self.fc1 = nn.Linear(1000, 800)
+        self.fc2 = nn.Linear(800, 700)
+        self.fc3 = nn.Linear(700, self.k_size * self.k_size)
 
     def forward(self, x):
         # x = x.view(-1, 3 * 256 * 256)
@@ -225,10 +226,13 @@ class ConvOp(nn.Module):
 
 
 class CorrOp(nn.Module):
-    def __init__(self):
-        super(ConvOp, self).__init__()
+    def __init__(self, kernel_size=None):
+        super(CorrOp, self).__init__()
         self.n_planes = 3
-        self.kernel_size = [25, 25] # connect with an option
+        if kernel_size is None:
+                self.kernel_size = [25, 25] # connect with an option
+        else:
+                self.kernel_size = kernel_size
         """
         self.downsampler = nn.Conv2d(self.n_planes, self.n_planes,
                                      kernel_size=self.kernel_size,
@@ -244,7 +248,7 @@ class CorrOp(nn.Module):
             if  self.kernel_size[0] % 2 == 1:
                 pad = int((self.kernel_size[0] - 1) / 2.)
             else:
-                pad = int((self.kernel_size[0] - factor) / 2.)
+                pad = int(self.kernel_size[0] / 2.)
 
             self.padding = nn.ReplicationPad2d(pad)
         self.preserve_size = preserve_size

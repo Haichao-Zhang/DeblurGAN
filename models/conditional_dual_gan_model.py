@@ -44,7 +44,8 @@ class ConditionalDualGAN(BaseModel):
 										  opt.n_layers_D, opt.norm, use_sigmoid, self.gpu_ids, use_parallel)
 
                         # E is a generator for blur kernel
-			self.netE = networks.define_E(1, opt.output_nc * 2, opt.ndf,
+			self.netE = networks.define_E(1,
+                                                      opt.output_nc * 2, opt.ndf,
                                                       opt.which_model_netD,
                                                       opt.norm,
                                                       not opt.no_dropout,
@@ -121,11 +122,17 @@ class ConditionalDualGAN(BaseModel):
                 # input_data = torch.cat((self.real_A, self.fake_B), 1)
                 ## perform convolutional data interaction rather than concat
                 conv2_t = torch.nn.functional.conv2d
-                # print(self.real_A)
                 # print(self.fake_B)
                 
-                #input_data = conv2_t(self.real_A, self.fake_B, padding=self.real_A.size(2) / 2)
-                input_data = self.real_A
+                input_data = conv2_t(self.real_A[:,0,:,:].unsqueeze(1),
+                                     self.fake_B[:,0,:,:].unsqueeze(1),
+                                     padding=self.real_A.size(2) / 2)
+
+                #self.CorrOp = networks.CorrOp(kernel_size = [self.real_A.size(2), self.real_A.size(3)])
+                #print(self.real_A[:,0,:,:].unsqueeze(1).shape)
+                #input_data = self.CorrOp(self.real_A[:, 0, :, :].unsqueeze(1),
+                #                         self.fake_B[:, 0, :, :].unsqueeze(1))
+                # input_data = self.real_A
                 self.blur_est = self.netE.forward(input_data)
                 #print(self.blur_est)
                 
@@ -237,9 +244,10 @@ class ConditionalDualGAN(BaseModel):
 		real_A = util.tensor2im(self.real_A.data)
 		fake_B = util.tensor2im(self.fake_B.data)
 		real_B = util.tensor2im(self.real_B.data)
-                kernel = util.tensor2psf(self.blur_est.data)
+                kernel = util.tensor2psf(self.real_K.data)
+                kernel_est = util.tensor2psf(self.blur_est.data)
                 reblur_A = util.tensor2im(self.reblur_A.data)
-		return OrderedDict([('Blurred_Train', real_A), ('Restored_Train', fake_B), ('Sharp_Train', real_B), ('Est_ker', kernel), ('reblur', reblur_A)])
+		return OrderedDict([('Blurred_Train', real_A), ('Restored_Train', fake_B), ('Sharp_Train', real_B), ('Real_ker', kernel), ('Est_ker', kernel_est), ('reblur', reblur_A)])
 
 	def save(self, label):
 		self.save_network(self.netG, 'G', label, self.gpu_ids)
