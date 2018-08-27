@@ -190,9 +190,10 @@ class ConditionalDualGAN(BaseModel):
                 #self.real_K = k_est.detach()
  		self.loss_G_GAN_psf = self.discLoss.get_g_loss(self.netD_psf,
                                                                None, k_est)
-                #L = nn.MSELoss()
-		#self.loss_G_Content_psf = L(k_est, self.real_K) * self.opt.lambda_K
+                L = nn.MSELoss()
+		self.loss_G_Content_psf = L(k_est, self.real_K) * self.opt.lambda_K
 
+                """
                 k_est3 = torch.cat((k_est, k_est, k_est), 1)
                 k_real3 = torch.cat((self.real_K, self.real_K, self.real_K), 1)
 
@@ -201,7 +202,8 @@ class ConditionalDualGAN(BaseModel):
                 
 		self.loss_G_Content_psf = self.contentLoss.get_loss(
                         k_est3, k_real3) * self.opt.lambda_K
-                
+                """
+
                 #print(self.loss_G_GAN_psf)
                 #print(self.loss_G_Content_psf)
 		self.loss_G_psf = self.loss_G_GAN_psf + self.loss_G_Content_psf
@@ -244,8 +246,10 @@ class ConditionalDualGAN(BaseModel):
 		real_A = util.tensor2im(self.real_A.data)
 		fake_B = util.tensor2im(self.fake_B.data)
 		real_B = util.tensor2im(self.real_B.data)
-                kernel = util.tensor2psf(self.real_K.data)
+                kernel = util.tensor2psf(self.real_K.squeeze(0).data) # remove the singlton batch dim
                 kernel_est = util.tensor2psf(self.blur_est.data)
+                # print(kernel.shape)
+                # print(kernel_est.shape)
                 reblur_A = util.tensor2im(self.reblur_A.data)
 		return OrderedDict([('Blurred_Train', real_A), ('Restored_Train', fake_B), ('Sharp_Train', real_B), ('Real_ker', kernel), ('Est_ker', kernel_est), ('reblur', reblur_A)])
 
