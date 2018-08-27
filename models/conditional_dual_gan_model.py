@@ -121,25 +121,28 @@ class ConditionalDualGAN(BaseModel):
                 # self.blur_est = self.netE.forward(self.real_A)
                 # input_data = torch.cat((self.real_A, self.fake_B), 1)
                 ## perform convolutional data interaction rather than concat
+                """
                 conv2_t = torch.nn.functional.conv2d
-                # print(self.fake_B)
-                
                 input_data = conv2_t(self.real_A[:,0,:,:].unsqueeze(1),
                                      self.fake_B[:,0,:,:].unsqueeze(1),
                                      padding=self.real_A.size(2) / 2)
+                self.blur_est = self.netE.forward(input_data)
+                """
 
                 #self.CorrOp = networks.CorrOp(kernel_size = [self.real_A.size(2), self.real_A.size(3)])
                 #print(self.real_A[:,0,:,:].unsqueeze(1).shape)
                 #input_data = self.CorrOp(self.real_A[:, 0, :, :].unsqueeze(1),
                 #                         self.fake_B[:, 0, :, :].unsqueeze(1))
                 # input_data = self.real_A
-                self.blur_est = self.netE.forward(input_data)
+
                 #print(self.blur_est)
                 
                 """
                 self.blur_est = get_K(self.real_A[0,0,:,:], self.fake_B[0,0,:,:], 25).unsqueeze(0)
                 """
-                self.reblur_A = self.netB.forward(self.fake_B, self.blur_est)
+                # now using the true kernel for constructing the observation process
+                self.reblur_A = self.netB.forward(self.fake_B, self.real_K.unsqueeze(0))
+                # self.reblur_A = self.netB.forward(self.fake_B, self.blur_est)
                 #self.reblur_A = self.netB.forward(self.fake_B.detach(), self.blur_est)
 
 	# no backprop gradients
@@ -171,9 +174,9 @@ class ConditionalDualGAN(BaseModel):
 
         # B induces a loss while E is not
 	def backward_reblur(self):
-                L = nn.MSELoss()
- 		self.loss_obs = L(self.reblur_A, self.real_A.detach()) * self.opt.lambda_C
-                # self.loss_obs = self.contentLoss.get_loss(self.reblur_A, self.real_A.detach()) * self.opt.lambda_C
+                #L = nn.MSELoss()
+ 		#self.loss_obs = L(self.reblur_A, self.real_A.detach()) * self.opt.lambda_C
+                self.loss_obs = self.contentLoss.get_loss(self.reblur_A, self.real_A.detach()) * self.opt.lambda_C
 
 		self.loss_obs.backward(retain_graph=True)
 
@@ -218,19 +221,20 @@ class ConditionalDualGAN(BaseModel):
 			self.optimizer_D.zero_grad()
 			self.backward_D()
 			self.optimizer_D.step()
+                        """
                         self.optimizer_D_psf.zero_grad()
 			self.backward_D_psf()
 			self.optimizer_D_psf.step()
-
+                        """
 		self.optimizer_G.zero_grad()
-                self.optimizer_E.zero_grad()
+                # self.optimizer_E.zero_grad()
                 #self.optimizer_B.zero_grad()
                 ## obs cost
                 self.backward_reblur()
 		self.backward_G()
-                self.backward_G_psf()
-		self.optimizer_G.step()
-                self.optimizer_E.step() # G for kernel
+                self.optimizer_G.step()
+                #self.backward_G_psf()
+                #self.optimizer_E.step() # G for kernel
                 #self.optimizer_B.step()
 
 	def get_current_errors(self):
