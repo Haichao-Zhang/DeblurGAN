@@ -94,10 +94,10 @@ class ConditionalDualGAN(BaseModel):
 		if self.isTrain:
 			networks.print_network(self.netD)
  		print('-----------------------------------------------')
-		networks.print_network(self.netE)
-		if self.isTrain:
-			networks.print_network(self.netB)
-			networks.print_network(self.netD_psf)
+		#networks.print_network(self.netE)
+		#if self.isTrain:
+			#networks.print_network(self.netB)
+		#	networks.print_network(self.netD_psf)
 		print('-----------------------------------------------')
 
 
@@ -239,11 +239,11 @@ class ConditionalDualGAN(BaseModel):
 
 	def get_current_errors(self):
 		return OrderedDict([('G_GAN', self.loss_G_GAN.data[0]),
-							('G_L1', self.loss_G_Content.data[0]),
-							('D_real+fake', self.loss_D.data[0]),
-							('G_psf', self.loss_G_psf.data[0]),
-							('D_real+fake_pdf', self.loss_D_psf.data[0]),
-							('reblur_err', self.loss_obs.data[0])
+                                    ('G_L1', self.loss_G_Content.data[0]),
+                                    ('D_real+fake', self.loss_D.data[0]),
+                                    #('G_psf', self.loss_G_psf.data[0]),
+                                    #('D_real+fake_psf', self.loss_D_psf.data[0]),
+                                    ('reblur_err', self.loss_obs.data[0]),
 							])
 
 	def get_current_visuals(self):
@@ -251,11 +251,16 @@ class ConditionalDualGAN(BaseModel):
 		fake_B = util.tensor2im(self.fake_B.data)
 		real_B = util.tensor2im(self.real_B.data)
                 kernel = util.tensor2psf(self.real_K.squeeze(0).data) # remove the singlton batch dim
-                kernel_est = util.tensor2psf(self.blur_est.data)
+                #kernel_est = util.tensor2psf(self.blur_est.data)
                 # print(kernel.shape)
                 # print(kernel_est.shape)
                 reblur_A = util.tensor2im(self.reblur_A.data)
-		return OrderedDict([('Blurred_Train', real_A), ('Restored_Train', fake_B), ('Sharp_Train', real_B), ('Real_ker', kernel), ('Est_ker', kernel_est), ('reblur', reblur_A)])
+		return OrderedDict([('Blurred_Train', real_A), 
+                                    ('Restored_Train', fake_B), 
+                                    ('Sharp_Train', real_B), 
+                                    ('Real_ker', kernel),
+                                    #('Est_ker', kernel_est), 
+                                    ('reblur', reblur_A)])
 
 	def save(self, label):
 		self.save_network(self.netG, 'G', label, self.gpu_ids)

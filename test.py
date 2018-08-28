@@ -18,7 +18,10 @@ opt.serial_batches = True  # no shuffle
 opt.no_flip = True  # no flip
 opt.no_clip = True
 opt.resize_or_crop = 'scale_width'
+opt.dataset_mode = 'single'
+opt.model = 'test'
 
+print(opt.phase)
 data_loader = CreateDataLoader(opt)
 dataset = data_loader.load_data()
 model = create_model(opt)

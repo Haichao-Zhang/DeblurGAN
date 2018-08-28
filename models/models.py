@@ -4,6 +4,7 @@ from .conditional_dual_gan_model import ConditionalDualGAN
 
 def create_model(opt):
 	model = None
+        print("888888888888 %s " % opt.model)
 	if opt.model == 'test':
 		assert (opt.dataset_mode == 'single')
 		from .test_model import TestModel
