@@ -36,29 +36,17 @@ class ConditionalDualGAN(BaseModel):
 		#Temp Fix for nn.parallel as nn.parallel crashes oc calculating gradient penalty
 		use_parallel = not opt.gan_type == 'wgan-gp'
 		self.netG = networks.define_G(opt.input_nc, opt.output_nc, opt.ngf,
-									  opt.which_model_netG, opt.norm, not opt.no_dropout, self.gpu_ids, use_parallel, opt.learn_residual)
+                                              opt.which_model_netG, opt.norm, not opt.no_dropout, self.gpu_ids, use_parallel, opt.learn_residual)
 		if self.isTrain:
 			use_sigmoid = opt.gan_type == 'gan'
 			self.netD = networks.define_D(opt.output_nc, opt.ndf,
-										  opt.which_model_netD,
-										  opt.n_layers_D, opt.norm, use_sigmoid, self.gpu_ids, use_parallel)
-
-                        # E is a generator for blur kernel
-			self.netE = networks.define_E(1,
-                                                      opt.output_nc * 2, opt.ndf,
                                                       opt.which_model_netD,
-                                                      opt.norm,
-                                                      not opt.no_dropout,
-                                                      self.gpu_ids, use_parallel, opt.learn_residual)
+                                                      opt.n_layers_D, opt.norm, use_sigmoid, self.gpu_ids, use_parallel)
+
+
 			self.netB = networks.define_B(opt.input_nc, opt.ndf,
-										  opt.which_model_netD,
-										  opt.n_layers_D, opt.norm, use_sigmoid, self.gpu_ids, use_parallel)
-
-                        # discriminator for psf (single channel input)
-			self.netD_psf = networks.define_D(1, opt.ndf,
-										  opt.which_model_netD,
-										  opt.n_layers_D, opt.norm, use_sigmoid, self.gpu_ids, use_parallel)
-
+                                                      opt.which_model_netD,
+                                                      opt.n_layers_D, opt.norm, use_sigmoid, self.gpu_ids, use_parallel)
 
 		if not self.isTrain or opt.continue_train:
 			self.load_network(self.netG, 'G', opt.which_epoch)
@@ -71,18 +59,9 @@ class ConditionalDualGAN(BaseModel):
 
 			# initialize optimizers
 			self.optimizer_G = torch.optim.Adam(self.netG.parameters(),
-												lr=opt.lr, betas=(opt.beta1, 0.999))
+                                                            lr=opt.lr, betas=(opt.beta1, 0.999))
 			self.optimizer_D = torch.optim.Adam(self.netD.parameters(),
-												lr=opt.lr, betas=(opt.beta1, 0.999))
-
-			self.optimizer_E = torch.optim.Adam(self.netE.parameters(),
-												lr=opt.lr, betas=(opt.beta1, 0.999))
-
-			self.optimizer_B = torch.optim.Adam(self.netB.parameters(),
-												lr=opt.lr, betas=(opt.beta1, 0.999))
-			
-                        self.optimizer_D_psf = torch.optim.Adam(self.netD_psf.parameters(),
-												lr=opt.lr, betas=(opt.beta1, 0.999))
+                                                            lr=opt.lr, betas=(opt.beta1, 0.999))
 
 			self.criticUpdates = 5 if opt.gan_type == 'wgan-gp' else 1
 
@@ -117,33 +96,8 @@ class ConditionalDualGAN(BaseModel):
 		self.real_B = Variable(self.input_B)
 		self.real_K = Variable(self.input_K)
 
-                # blur est and re-blur
-                # self.blur_est = self.netE.forward(self.real_A)
-                # input_data = torch.cat((self.real_A, self.fake_B), 1)
-                ## perform convolutional data interaction rather than concat
-                """
-                conv2_t = torch.nn.functional.conv2d
-                input_data = conv2_t(self.real_A[:,0,:,:].unsqueeze(1),
-                                     self.fake_B[:,0,:,:].unsqueeze(1),
-                                     padding=self.real_A.size(2) / 2)
-                self.blur_est = self.netE.forward(input_data)
-                """
-
-                #self.CorrOp = networks.CorrOp(kernel_size = [self.real_A.size(2), self.real_A.size(3)])
-                #print(self.real_A[:,0,:,:].unsqueeze(1).shape)
-                #input_data = self.CorrOp(self.real_A[:, 0, :, :].unsqueeze(1),
-                #                         self.fake_B[:, 0, :, :].unsqueeze(1))
-                # input_data = self.real_A
-
-                #print(self.blur_est)
-                
-                """
-                self.blur_est = get_K(self.real_A[0,0,:,:], self.fake_B[0,0,:,:], 25).unsqueeze(0)
-                """
                 # now using the true kernel for constructing the observation process
                 self.reblur_A = self.netB.forward(self.fake_B, self.real_K.unsqueeze(0))
-                # self.reblur_A = self.netB.forward(self.fake_B, self.blur_est)
-                #self.reblur_A = self.netB.forward(self.fake_B.detach(), self.blur_est)
 
 	# no backprop gradients
 	def test(self):
@@ -174,9 +128,9 @@ class ConditionalDualGAN(BaseModel):
 
         # B induces a loss while E is not
 	def backward_reblur(self):
-                #L = nn.MSELoss()
- 		#self.loss_obs = L(self.reblur_A, self.real_A.detach()) * self.opt.lambda_C
-                self.loss_obs = self.contentLoss.get_loss(self.reblur_A, self.real_A.detach()) * self.opt.lambda_C
+                L = nn.MSELoss()
+ 		self.loss_obs = L(self.reblur_A, self.real_A.detach()) * self.opt.lambda_C
+                #self.loss_obs = self.contentLoss.get_loss(self.reblur_A, self.real_A.detach()) * self.opt.lambda_C
 
 		self.loss_obs.backward(retain_graph=True)
 
