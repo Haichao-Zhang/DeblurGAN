@@ -13,6 +13,9 @@ def CreateDataset(opt):
     elif opt.dataset_mode == 'separate':
         from data.separate_dataset import SeparateDataset
         dataset = SeparateDataset()
+    elif opt.dataset_mode == 'multi':
+        from data.multi_dataset import MultiDataset
+        dataset = MultiDataset()
     elif opt.dataset_mode == 'single':
         from data.single_dataset import SingleDataset
         dataset = SingleDataset()
