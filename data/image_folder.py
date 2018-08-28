@@ -10,6 +10,8 @@ import torch.utils.data as data
 from PIL import Image
 import os
 import os.path
+import glob
+
 
 IMG_EXTENSIONS = [
     '.jpg', '.JPG', '.jpeg', '.JPEG',
@@ -32,6 +34,38 @@ def make_dataset(dir):
                 images.append(path)
 
     return images
+
+## make a joint dataset based on a specific folder structure
+def make_joint_dataset(dir_img_folders):
+    x_paths = []
+    y_paths = []
+    k_paths = []
+
+    assert os.path.isdir(dir), '%s is not a valid directory' % dir
+
+    for folder_name in sorted(dir):
+        # there should be only one sharp image
+        for fname in glob.glob(folder_name + "*sharp*"):
+            if is_image_file(fname):
+                x_paths.append(fname)
+
+        yp = []
+        for fname in sorted(glob.glob(folder_name + "*blurry*")):
+            if is_image_file(fname):
+                yp.append(fname)
+        y_paths.append(yp)
+
+        kp = []
+        for fname in sorted(glob.glob(folder_name + "*ker*")):
+            if is_image_file(fname):
+                kp.append(fname)
+        k_paths.append(kp)
+
+        assert len(y_paths) == len(k_paths)
+        assert len(y_paths) == len(x_paths)
+        
+
+    return x_paths, y_paths, k_paths
 
 
 def default_loader(path):

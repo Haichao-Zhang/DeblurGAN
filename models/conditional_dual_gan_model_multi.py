@@ -81,9 +81,9 @@ class ConditionalDualGANMulti(BaseModel):
 
 	def set_input(self, input):
                 # Already tensors
-		self.in_y = input['A_set'] # blurry
-		self.real_x = input['B']
-                self.in_k = input['K_set'] # kernel
+		self.in_y = input['blurry_set'] # blurry
+		self.real_x = input['sharp']
+                self.in_k = input['kernel_set'] # kernel
                 # why need copy??
 		#self.input_A.resize_(input_A.size()).copy_(input_A)
 		#self.input_B.resize_(input_B.size()).copy_(input_B)
