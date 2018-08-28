@@ -9,6 +9,8 @@ def create_model(opt):
 		assert (opt.dataset_mode == 'single')
 		from .test_model import TestModel
 		model = TestModel()
+        elif opt.model == 'multi':
+		model = ConditionalDualGANMulti()
 	else:
 		#model = ConditionalGANObs()
 		#model = ConditionalGAN()
