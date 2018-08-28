@@ -16,21 +16,21 @@ try:
 except NameError:
 	xrange = range  # Python 3
 
-class ConditionalDualGAN(BaseModel):
+class ConditionalDualGANMulti(BaseModel):
 	def name(self):
-		return 'ConditionalGANModelObs'
+		return 'ConditionalDualGANMulti'
 
 	def initialize(self, opt):
 		BaseModel.initialize(self, opt)
 		self.isTrain = opt.isTrain
 		# define tensors
 		self.input_A = self.Tensor(opt.batchSize, opt.input_nc,
-								   opt.fineSize, opt.fineSize)
-		self.input_B = self.Tensor(opt.batchSize, opt.output_nc,								   opt.fineSize, opt.fineSize)
+                                           opt.fineSize, opt.fineSize)
+		self.input_B = self.Tensor(opt.batchSize, opt.output_nc,
+                                           opt.fineSize, opt.fineSize)
 
                 # blur kernels (single channel)
 		self.input_K = self.Tensor(opt.batchSize, 1, opt.kerSize, opt.kerSize) # generalize later
-
                 self.obs_num = opt.obs_num # number of observations
 
 		# load/define networks
@@ -44,10 +44,12 @@ class ConditionalDualGAN(BaseModel):
                                                       opt.which_model_netD,
                                                       opt.n_layers_D, opt.norm, use_sigmoid, self.gpu_ids, use_parallel)
 
-
 			self.netB = networks.define_B(opt.input_nc, opt.ndf,
                                                       opt.which_model_netD,
                                                       opt.n_layers_D, opt.norm, use_sigmoid, self.gpu_ids, use_parallel)
+
+                        # define fusion network
+                        self.netFusion = networls.define_fusion(*****)
 
 		if not self.isTrain or opt.continue_train:
 			self.load_network(self.netG, 'G', opt.which_epoch)
@@ -55,7 +57,6 @@ class ConditionalDualGAN(BaseModel):
 				self.load_network(self.netD, 'D', opt.which_epoch)
 
 		if self.isTrain:
-			self.fake_AB_pool = ImagePool(opt.pool_size)
 			self.old_lr = opt.lr
 
 			# initialize optimizers
@@ -63,6 +64,10 @@ class ConditionalDualGAN(BaseModel):
                                                             lr=opt.lr, betas=(opt.beta1, 0.999))
 			self.optimizer_D = torch.optim.Adam(self.netD.parameters(),
                                                             lr=opt.lr, betas=(opt.beta1, 0.999))
+
+			self.optimizer_fusion = torch.optim.Adam(self.netFusion.parameters(),
+                                                                 lr=opt.lr, betas=(opt.beta1, 0.999))
+
 
 			self.criticUpdates = 5 if opt.gan_type == 'wgan-gp' else 1
 
@@ -73,32 +78,50 @@ class ConditionalDualGAN(BaseModel):
 		networks.print_network(self.netG)
 		if self.isTrain:
 			networks.print_network(self.netD)
- 		print('-----------------------------------------------')
-		#networks.print_network(self.netE)
-		#if self.isTrain:
-			#networks.print_network(self.netB)
-		#	networks.print_network(self.netD_psf)
-		print('-----------------------------------------------')
-
 
 	def set_input(self, input):
-		AtoB = self.opt.which_direction == 'AtoB'
-		input_A = input['A' if AtoB else 'B']
-		input_B = input['B' if AtoB else 'A']
-                input_K = input['K']
-		self.input_A.resize_(input_A.size()).copy_(input_A)
-		self.input_B.resize_(input_B.size()).copy_(input_B)
-		self.input_K.resize_(input_K.size()).copy_(input_K)
+                # Already tensors
+		self.in_y = input['A_set'] # blurry
+		self.real_x = input['B']
+                self.in_k = input['K_set'] # kernel
+                # why need copy??
+		#self.input_A.resize_(input_A.size()).copy_(input_A)
+		#self.input_B.resize_(input_B.size()).copy_(input_B)
+		#self.input_K.resize_(input_K.size()).copy_(input_K)
+
+                ## initial state as zero, size the same size as image (will change later)
+		self.init_state.zeros(real_x.size())
+                self.obs_num = len(self.in_y)
+
 		self.image_paths = input['A_paths' if AtoB else 'B_paths']
 
 	def forward(self):
-		self.real_A = Variable(self.input_A)
-		self.fake_B = self.netG.forward(self.real_A)
-		self.real_B = Variable(self.input_B)
-		self.real_K = Variable(self.input_K)
+                ## why need this?
+		#self.real_A = Variable(self.input_A)
+		#self.real_B = Variable(self.input_B)
+		#self.real_K = Variable(self.input_K) # x, {y_, k_i} -> {out_i} for cost computation
 
-                # now using the true kernel for constructing the observation process
-                self.reblur_A = self.netB.forward(self.fake_B, self.real_K.unsqueeze(0))
+
+                state = self.init_state
+
+                out_x = []
+                out_y = []
+                # recurrent forwarding
+                #for i in range(self.obs_num)):
+                for yi, ki in zip(self.in_y, self.in_k):
+                        h_x = self.netG.forward(yi) # hidden state for x
+                        # fusion function
+                        # state = self.netFusion(h_x, state)
+                        state = (h_x + state) / 2 # simple average fusion
+                        fusion_x = state # currently an identity function
+                        # now using the true kernel for constructing the observation process
+                        reblur_A = self.netB.forward(fusion_x, ki.unsqueeze(0))
+                        out_x.append(fusion_x)
+                        out_y.append(reblur_A)
+                
+                self.out_x = out_x
+                self.out_y = out_y
+
 
 	# no backprop gradients
 	def test(self):
@@ -111,29 +134,34 @@ class ConditionalDualGAN(BaseModel):
 		return self.image_paths
 
 	def backward_D(self):
-		self.loss_D = self.discLoss.get_loss(self.netD, self.real_A, self.fake_B.detach(), self.real_B)
-
+                # compute loss for all the observations
+                self.loss_D = 0
+                for xi, yi in zip(self.out_x, self.out_y):
+                        # real_B is the real sharp image
+                        self.loss_D += self.discLoss.get_loss(self.netD, None, xi.detach(), self.real_x)
 		self.loss_D.backward(retain_graph=True)
 
 	def backward_G(self):
-		self.loss_G_GAN = self.discLoss.get_g_loss(self.netD, self.real_A, self.fake_B)
-		# Second, G(A) = B
-                #fake_B = torch.cat((self.fake_B, self.fake_B, self.fake_B), 1)
-                #real_B= torch.cat((self.real_B, self.real_B, self.real_B), 1)
-		self.loss_G_Content = self.contentLoss.get_loss(self.fake_B, self.real_B) * self.opt.lambda_A
-
+                self.loss_G_GAN = 0
+                self.loss_G_Content = 0
+                for xi, yi in zip(self.out_x, self.out_y):
+                        self.loss_G_GAN += self.discLoss.get_g_loss(self.netD, None, xi)
+                        # Second, G(A) = B
+                        self.loss_G_Content += self.contentLoss.get_loss(xi, self.real_x) * self.opt.lambda_A
 		self.loss_G = self.loss_G_GAN + self.loss_G_Content
-
 		self.loss_G.backward(retain_graph=True)
 
         # B induces a loss while E is not
 	def backward_reblur(self):
                 L = nn.MSELoss()
- 		self.loss_obs = L(self.reblur_A, self.real_A.detach()) * self.opt.lambda_C
-                #self.loss_obs = self.contentLoss.get_loss(self.reblur_A, self.real_A.detach()) * self.opt.lambda_C
+                self.loss_obs = 0
+                for yi_reblur, yi_true in zip(self.out_y, self.in_y):
+                        self.loss_obs += L(self.yi_reblur, self.yi_true) * self.opt.lambda_C
+                        #self.loss_obs = self.contentLoss.get_loss(self.reblur_A, self.real_A.detach()) * self.opt.lambda_C
 		self.loss_obs.backward(retain_graph=True)
 
 	def optimize_parameters(self):
+                # saved everything
 		self.forward()
 
 		for iter_d in xrange(self.criticUpdates):
@@ -147,6 +175,9 @@ class ConditionalDualGAN(BaseModel):
 		self.backward_G()
                 self.optimizer_G.step()
 
+
+
+        # for visualization, model saving
 	def get_current_errors(self):
 		return OrderedDict([('G_GAN', self.loss_G_GAN.data[0]),
                                     ('G_L1', self.loss_G_Content.data[0]),
