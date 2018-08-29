@@ -113,12 +113,15 @@ class ConditionalDualGANMulti(BaseModel):
                 out_y = []
                 # recurrent forwarding
                 #for i in range(self.obs_num)):
-                for yi, ki in zip(self.in_y, self.in_k):
+                for i, (yi, ki) in enumerate(zip(self.in_y, self.in_k)):
                         h_x = self.netG.forward(yi) # hidden state for x
                         # fusion function
                         # state = self.netFusion(h_x, state)
                         #in_cat = torch.cat((h_x, state), 1)
-                        in_cat = (h_x + state) / 2.0
+                        if i == 0:
+                                in_cat = h_x
+                        else:
+                                in_cat = (h_x + state) / 2.0
                         state = self.netFusion(in_cat)
                         #state = (h_x + state) / 2 # simple average fusion
                         fusion_x = state # currently an identity function
