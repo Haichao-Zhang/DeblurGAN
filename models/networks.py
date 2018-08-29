@@ -115,6 +115,23 @@ def define_fusion(input_nc, output_nc, ngf, which_model_netG, norm='batch', use_
 	use_gpu = len(gpu_ids) > 0
 	norm_layer = get_norm_layer(norm_type=norm)
 
+
+        # depth fusion net
+        model = [
+                nn.ZeroPad2d(3),
+                nn.Conv2d(input_nc, ngf, kernel_size=7, padding=0,
+                          bias=use_bias),
+                #norm_layer(ngf),
+                nn.ReLU(True),
+                nn.ZeroPad2d(3),
+                nn.Conv2d(ngf, output_nc, kernel_size=7, padding=0,
+                          bias=use_bias),
+                #norm_layer(ngf),
+                nn.ReLU(True),
+                ]        
+        netG = nn.Sequential(*model)
+
+        """
 	if use_gpu:
 		assert(torch.cuda.is_available())
 
@@ -128,6 +145,7 @@ def define_fusion(input_nc, output_nc, ngf, which_model_netG, norm='batch', use_
 		netG = UnetGenerator(input_nc, output_nc, 8, ngf, norm_layer=norm_layer, use_dropout=use_dropout, gpu_ids=gpu_ids, use_parallel=use_parallel, learn_residual = learn_residual)
 	else:
 		raise NotImplementedError('Generator model name [%s] is not recognized' % which_model_netG)
+        """
 	if len(gpu_ids) > 0:
 		netG.cuda(gpu_ids[0])
 	netG.apply(weights_init)

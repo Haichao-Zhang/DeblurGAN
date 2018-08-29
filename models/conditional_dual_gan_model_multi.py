@@ -106,7 +106,6 @@ class ConditionalDualGANMulti(BaseModel):
 		#self.real_B = Variable(self.input_B)
 		#self.real_K = Variable(self.input_K) # x, {y_, k_i} -> {out_i} for cost computation
 
-
                 state = self.init_state
 
                 out_x = []
@@ -117,17 +116,24 @@ class ConditionalDualGANMulti(BaseModel):
                         h_x = self.netG.forward(yi) # hidden state for x
                         # fusion function
                         # state = self.netFusion(h_x, state)
-                        #in_cat = torch.cat((h_x, state), 1)
+                        in_cat = torch.cat((h_x, state), 1)
+                        """
                         if i == 0:
                                 in_cat = h_x
                         else:
                                 in_cat = (h_x + state) / 2.0
+                        """
                         state = self.netFusion(in_cat)
                         #state = (h_x + state) / 2 # simple average fusion
                         fusion_x = state # currently an identity function
                         # now using the true kernel for constructing the observation process
                         reblur_A = self.netB.forward(fusion_x, ki.unsqueeze(0))
                         out_x.append(fusion_x)
+                        out_y.append(reblur_A)
+
+                # batch reblur
+                for i, (xi, ki) in enumerate(zip(out_x, self.in_k)):
+                        reblur_A = self.netB.forward(xi, ki.unsqueeze(0))
                         out_y.append(reblur_A)
                 
                 self.out_x = out_x
@@ -147,7 +153,8 @@ class ConditionalDualGANMulti(BaseModel):
 	def backward_D(self):
                 # compute loss for all the observations
                 self.loss_D = 0
-                for xi, yi in zip(self.out_x, self.out_y):
+                # for xi, yi in zip(self.out_x, self.out_y):
+                for xi, yi in zip([self.out_x[-1]], [self.out_y[-1]]):
                         # real_B is the real sharp image
                         self.loss_D += self.discLoss.get_loss(self.netD, None, xi.detach(), self.real_x)
 		self.loss_D.backward(retain_graph=True)
@@ -155,7 +162,8 @@ class ConditionalDualGANMulti(BaseModel):
 	def backward_G(self):
                 self.loss_G_GAN = 0
                 self.loss_G_Content = 0
-                for xi, yi in zip(self.out_x, self.out_y):
+                #for xi, yi in zip(self.out_x, self.out_y):
+                for xi, yi in zip([self.out_x[-1]], [self.out_y[-1]]):
                         self.loss_G_GAN += self.discLoss.get_g_loss(self.netD, None, xi)
                         # Second, G(A) = B
                         self.loss_G_Content += self.contentLoss.get_loss(xi, self.real_x) * self.opt.lambda_A
@@ -166,6 +174,7 @@ class ConditionalDualGANMulti(BaseModel):
 	def backward_reblur(self):
                 L = nn.MSELoss()
                 self.loss_obs = 0
+                # reblur all based on the final estimated x
                 for yi_reblur, yi_true in zip(self.out_y, self.in_y):
                         self.loss_obs += L(yi_reblur, yi_true) * self.opt.lambda_C
                         #self.loss_obs = self.contentLoss.get_loss(self.reblur_A, self.real_A.detach()) * self.opt.lambda_C
