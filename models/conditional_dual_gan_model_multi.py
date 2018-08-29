@@ -117,7 +117,7 @@ class ConditionalDualGANMulti(BaseModel):
                         h_x = self.netG.forward(yi) # hidden state for x
                         # fusion function
                         # state = self.netFusion(h_x, state)
-                        in_cat = torch.cat((h_x, state), 1)
+                        #in_cat = torch.cat((h_x, state), 1)
                         in_cat = (h_x + state) / 2.0
                         state = self.netFusion(in_cat)
                         #state = (h_x + state) / 2 # simple average fusion
@@ -178,6 +178,8 @@ class ConditionalDualGANMulti(BaseModel):
 			self.optimizer_D.step()
 
 		self.optimizer_G.zero_grad()
+		self.optimizer_fusion.zero_grad()
+
                 ## obs cost
                 self.backward_reblur()
 		self.backward_G()
@@ -201,7 +203,10 @@ class ConditionalDualGANMulti(BaseModel):
 		sharp_real = util.tensor2im(self.real_x.data)
                 vis['Sharp_Train'] = sharp_real
 		sharp_est = util.tensor2im(self.out_x[-1].data) # the last estimate
+
                 vis['Restored_Train'] = sharp_est
+		reblur = util.tensor2im(self.out_y[-1].data) # the last estimate
+                vis['reblur'] = reblur
                 # in_y
                 # in_k
                 for i, (yi, ki) in enumerate(zip(self.in_y, self.in_k)):
