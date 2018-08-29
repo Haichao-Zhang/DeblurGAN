@@ -54,7 +54,7 @@ def train(opt, data_loader, model, visualizer):
 			
 opt = TrainOptions().parse()
 opt.batchSize = 1
-opt.model = 'multi'
+# opt.model = 'multi'
 opt.dataset_mode = 'multi'
 data_loader = CreateDataLoader(opt)
 model = create_model(opt)

@@ -24,14 +24,16 @@ class ConditionalDualGANMulti(BaseModel):
 		BaseModel.initialize(self, opt)
 		self.isTrain = opt.isTrain
 		# define tensors
-		self.input_A = self.Tensor(opt.batchSize, opt.input_nc,
+		self.input_x = self.Tensor(opt.batchSize, opt.input_nc,
                                            opt.fineSize, opt.fineSize)
-		self.input_B = self.Tensor(opt.batchSize, opt.output_nc,
+		self.input_y = self.Tensor(opt.batchSize, opt.output_nc,
                                            opt.fineSize, opt.fineSize)
 
                 # blur kernels (single channel)
-		self.input_K = self.Tensor(opt.batchSize, 1, opt.kerSize, opt.kerSize) # generalize later
-                self.obs_num = opt.obs_num # number of observations
+		self.input_k = self.Tensor(opt.batchSize, 1, opt.kerSize, opt.kerSize) # generalize later
+
+		self.init_state = self.Tensor(opt.batchSize, opt.output_nc,
+                                           opt.fineSize, opt.fineSize)
 
 		# load/define networks
 		#Temp Fix for nn.parallel as nn.parallel crashes oc calculating gradient penalty
@@ -49,7 +51,8 @@ class ConditionalDualGANMulti(BaseModel):
                                                       opt.n_layers_D, opt.norm, use_sigmoid, self.gpu_ids, use_parallel)
 
                         # define fusion network
-                        self.netFusion = networls.define_fusion(*****)
+                        self.netFusion = networks.define_fusion(opt.input_nc * 1, opt.output_nc, opt.ngf,
+                                              opt.which_model_netG, opt.norm, not opt.no_dropout, self.gpu_ids, use_parallel, opt.learn_residual)
 
 		if not self.isTrain or opt.continue_train:
 			self.load_network(self.netG, 'G', opt.which_epoch)
@@ -80,20 +83,22 @@ class ConditionalDualGANMulti(BaseModel):
 			networks.print_network(self.netD)
 
 	def set_input(self, input):
+                def to_cuda(cpu_data):
+                        return [d.cuda() for d in cpu_data]
+                        
                 # Already tensors
-		self.in_y = input['blurry_set'] # blurry
-		self.real_x = input['sharp']
-                self.in_k = input['kernel_set'] # kernel
+		self.in_y = to_cuda(input['blurry_set']) # blurry
+		self.real_x = input['sharp'].cuda()
+                self.in_k = to_cuda(input['kernel_set']) # kernel
+
                 # why need copy??
 		#self.input_A.resize_(input_A.size()).copy_(input_A)
 		#self.input_B.resize_(input_B.size()).copy_(input_B)
 		#self.input_K.resize_(input_K.size()).copy_(input_K)
 
                 ## initial state as zero, size the same size as image (will change later)
-		self.init_state.zeros(real_x.size())
+		self.init_state = torch.zeros_like(self.real_x)
                 self.obs_num = len(self.in_y)
-
-		self.image_paths = input['A_paths' if AtoB else 'B_paths']
 
 	def forward(self):
                 ## why need this?
@@ -112,7 +117,10 @@ class ConditionalDualGANMulti(BaseModel):
                         h_x = self.netG.forward(yi) # hidden state for x
                         # fusion function
                         # state = self.netFusion(h_x, state)
-                        state = (h_x + state) / 2 # simple average fusion
+                        in_cat = torch.cat((h_x, state), 1)
+                        in_cat = (h_x + state) / 2.0
+                        state = self.netFusion(in_cat)
+                        #state = (h_x + state) / 2 # simple average fusion
                         fusion_x = state # currently an identity function
                         # now using the true kernel for constructing the observation process
                         reblur_A = self.netB.forward(fusion_x, ki.unsqueeze(0))
@@ -156,7 +164,7 @@ class ConditionalDualGANMulti(BaseModel):
                 L = nn.MSELoss()
                 self.loss_obs = 0
                 for yi_reblur, yi_true in zip(self.out_y, self.in_y):
-                        self.loss_obs += L(self.yi_reblur, self.yi_true) * self.opt.lambda_C
+                        self.loss_obs += L(yi_reblur, yi_true) * self.opt.lambda_C
                         #self.loss_obs = self.contentLoss.get_loss(self.reblur_A, self.real_A.detach()) * self.opt.lambda_C
 		self.loss_obs.backward(retain_graph=True)
 

@@ -21,9 +21,9 @@ class MultiDataset(BaseDataset):
         #    + psf_ij
         self.dir_img_folders = opt.dataroot # the root for all image folders
 
-        self.sharp_paths, self.blurry_paths, self.psf_paths = 
+        self.sharp_paths, self.blurry_paths, self.psf_paths = \
         make_joint_dataset(self.dir_img_folders)
-
+                
         #assert(opt.resize_or_crop == 'resize_and_crop')
 
         transform_list = [transforms.ToTensor(),
@@ -44,12 +44,11 @@ class MultiDataset(BaseDataset):
         w = sharp.size(2)
         h = sharp.size(1)
         # perform cropping
-        sharp = sharp[:, h_offset:h_offset + self.opt.fineSize,
-               w_offset:w_offset + self.opt.fineSize]
-
-
         w_offset = random.randint(0, max(0, w - self.opt.fineSize - 1))
         h_offset = random.randint(0, max(0, h - self.opt.fineSize - 1))
+
+        sharp = sharp[:, h_offset:h_offset + self.opt.fineSize,
+               w_offset:w_offset + self.opt.fineSize]
 
         y_paths = self.blurry_paths[index]
         k_paths = self.psf_paths[index]
@@ -62,12 +61,12 @@ class MultiDataset(BaseDataset):
             y = y[:, h_offset:h_offset + self.opt.fineSize,
                   w_offset:w_offset + self.opt.fineSize]
             blurry_set.append(y)
-            k = Image.open(kp).convert('RGB')
+            k = Image.open(kp)
             k = self.transform_ker(k)
-            K_arr = K.numpy()
-            K_arr = K_arr / sum(K_arr.reshape(-1))
+            k_arr = k.numpy()
+            k_arr = k_arr / sum(k_arr.reshape(-1))
             #print("K_arr numpy %s " % K_arr)
-            K = torch.Tensor(K_arr)
+            k = torch.Tensor(k_arr)
             kernel_set.append(k)
 
         return {'sharp': sharp,

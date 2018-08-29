@@ -110,6 +110,31 @@ def define_E_fcn(input_nc, output_nc, ndf, which_model_netD,
 	return netE
 
 
+def define_fusion(input_nc, output_nc, ngf, which_model_netG, norm='batch', use_dropout=False, gpu_ids=[], use_parallel = True, learn_residual = False):
+	netG = None
+	use_gpu = len(gpu_ids) > 0
+	norm_layer = get_norm_layer(norm_type=norm)
+
+	if use_gpu:
+		assert(torch.cuda.is_available())
+
+	if which_model_netG == 'resnet_9blocks':
+		netG = ResnetGenerator(input_nc, output_nc, ngf, norm_layer=norm_layer, use_dropout=use_dropout, n_blocks=9, gpu_ids=gpu_ids, use_parallel=use_parallel, learn_residual = learn_residual)
+	elif which_model_netG == 'resnet_6blocks':
+		netG = ResnetGenerator(input_nc, output_nc, ngf, norm_layer=norm_layer, use_dropout=use_dropout, n_blocks=6, gpu_ids=gpu_ids, use_parallel=use_parallel, learn_residual = learn_residual)
+	elif which_model_netG == 'unet_128':
+		netG = UnetGenerator(input_nc, output_nc, 7, ngf, norm_layer=norm_layer, use_dropout=use_dropout, gpu_ids=gpu_ids, use_parallel=use_parallel, learn_residual = learn_residual)
+	elif which_model_netG == 'unet_256':
+		netG = UnetGenerator(input_nc, output_nc, 8, ngf, norm_layer=norm_layer, use_dropout=use_dropout, gpu_ids=gpu_ids, use_parallel=use_parallel, learn_residual = learn_residual)
+	else:
+		raise NotImplementedError('Generator model name [%s] is not recognized' % which_model_netG)
+	if len(gpu_ids) > 0:
+		netG.cuda(gpu_ids[0])
+	netG.apply(weights_init)
+
+	return netG
+
+
 # re-blur/observation model
 # will require convolutional operator in pytorch
 def define_B(input_nc, ndf, which_model_netD,

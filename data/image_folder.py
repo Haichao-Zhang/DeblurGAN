@@ -41,30 +41,31 @@ def make_joint_dataset(dir_img_folders):
     y_paths = []
     k_paths = []
 
-    assert os.path.isdir(dir), '%s is not a valid directory' % dir
-
-    for folder_name in sorted(dir):
+    assert os.path.isdir(dir_img_folders), '%s is not a valid directory' % dir
+    for folder_name in sorted(os.listdir(dir_img_folders)):
         # there should be only one sharp image
-        for fname in glob.glob(folder_name + "*sharp*"):
+        folder_path = os.path.join(dir_img_folders, folder_name)
+        for fname in glob.glob(folder_path + "/*sharp*"):
             if is_image_file(fname):
                 x_paths.append(fname)
 
         yp = []
-        for fname in sorted(glob.glob(folder_name + "*blurry*")):
+        for fname in sorted(glob.glob(folder_path + "/*blurry*")):
             if is_image_file(fname):
                 yp.append(fname)
-        y_paths.append(yp)
+        if len(yp) != 0:
+            y_paths.append(yp)
 
         kp = []
-        for fname in sorted(glob.glob(folder_name + "*ker*")):
+        for fname in sorted(glob.glob(folder_path + "/*ker*")):
             if is_image_file(fname):
                 kp.append(fname)
-        k_paths.append(kp)
+        if len(kp) != 0:
+            k_paths.append(kp)
 
         assert len(y_paths) == len(k_paths)
         assert len(y_paths) == len(x_paths)
         
-
     return x_paths, y_paths, k_paths
 
 
