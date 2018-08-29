@@ -182,6 +182,7 @@ class ConditionalDualGANMulti(BaseModel):
                 self.backward_reblur()
 		self.backward_G()
                 self.optimizer_G.step()
+                self.optimizer_fusion.step()
 
 
 
@@ -196,17 +197,29 @@ class ConditionalDualGANMulti(BaseModel):
 							])
 
 	def get_current_visuals(self):
-		real_A = util.tensor2im(self.real_A.data)
-		fake_B = util.tensor2im(self.fake_B.data)
-		real_B = util.tensor2im(self.real_B.data)
-                kernel = util.tensor2psf(self.real_K.squeeze(0).data) # remove the singlton batch dim
-                reblur_A = util.tensor2im(self.reblur_A.data)
+                vis = OrderedDict()
+		sharp_real = util.tensor2im(self.real_x.data)
+                vis['Sharp_Train'] = sharp_real
+		sharp_est = util.tensor2im(self.out_x[-1].data) # the last estimate
+                vis['Restored_Train'] = sharp_est
+                # in_y
+                # in_k
+                for i, (yi, ki) in enumerate(zip(self.in_y, self.in_k)):
+                        blurry = util.tensor2im(yi.data)
+                        kernel = util.tensor2psf(ki.squeeze(0).data) # remove the singlton batch dim
+                        vis['blurry'+str(i)] = blurry
+                        vis['kernel'+str(i)] = kernel
+
+                return vis
+                #reblur_A = util.tensor2im(self.reblur_A.data)
+                """
 		return OrderedDict([('Blurred_Train', real_A), 
                                     ('Restored_Train', fake_B), 
                                     ('Sharp_Train', real_B), 
                                     ('Real_ker', kernel),
                                     #('Est_ker', kernel_est), 
                                     ('reblur', reblur_A)])
+                """
 
 	def save(self, label):
 		self.save_network(self.netG, 'G', label, self.gpu_ids)
