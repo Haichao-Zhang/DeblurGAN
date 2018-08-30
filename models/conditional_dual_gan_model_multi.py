@@ -245,7 +245,7 @@ class ConditionalDualGANMulti(BaseModel):
 	def save(self, label):
 		self.save_network(self.netG, 'G', label, self.gpu_ids)
 		self.save_network(self.netD, 'D', label, self.gpu_ids)
-                self.save_network(self.net_fusion, 'fusion', label, self.gpu_ids)
+                self.save_network(self.netFusion, 'fusion', label, self.gpu_ids)
 
 	def update_learning_rate(self):
 		lrd = self.opt.lr / self.opt.niter_decay

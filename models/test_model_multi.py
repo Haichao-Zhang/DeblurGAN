@@ -3,6 +3,7 @@ from collections import OrderedDict
 import util.util as util
 from .base_model import BaseModel
 from . import networks
+import torch
 
 
 class TestModel(BaseModel):
@@ -19,27 +20,25 @@ class TestModel(BaseModel):
                                       opt.learn_residual)
 
         # define fusion network
-        self.netFusion = networks.define_fusion(opt.input_nc * 2, opt.output_nc, opt.ngf,
-                                                opt.which_model_netG, opt.norm, not opt.no_dropout, self.gpu_ids, use_parallel, opt.learn_residual)
+        self.netFusion = networks.define_fusion(opt.input_nc * 2, opt.output_nc,
+                                                opt.ngf,
+                                                opt.which_model_netG, 
+                                                opt.norm, 
+                                                not opt.no_dropout,
+                                                self.gpu_ids, False,
+                                                opt.learn_residual)
 
 
         which_epoch = opt.which_epoch
         self.load_network(self.netG, 'G', which_epoch)
-        self.load_network(self.net_fusion, 'fusion', which_epoch)
+        self.load_network(self.netFusion, 'fusion', which_epoch)
 
         print('---------- Networks initialized -------------')
         networks.print_network(self.netG)
-        networks.print_network(self.net_fusion)
+        networks.print_network(self.netFusion)
         print('-----------------------------------------------')
 
     def set_input(self, input):
-        # we need to use single_dataset mode
-        input_A = input['A']
-        temp = self.input_A.clone()
-        temp.resize_(input_A.size()).copy_(input_A)
-        self.input_A = temp
-        self.image_paths = input['A_paths']
-
         def to_cuda(cpu_data):
             return [d.cuda() for d in cpu_data]
                         
@@ -51,7 +50,7 @@ class TestModel(BaseModel):
         self.obs_num = len(self.in_y)
 
     def test(self):
-        self.deblur = self.forward(self.in_y)
+        self.deblur = self.forward()
 
     def forward(self):
         state = self.init_state
@@ -60,7 +59,7 @@ class TestModel(BaseModel):
         out_y = []
         # recurrent forwarding
         #for i in range(self.obs_num)):
-        for i, (yi, ki) in enumerate(zip(self.in_y, self.in_k)):
+        for i, yi in enumerate(self.in_y):
             h_x = self.netG.forward(yi) # hidden state for x
             # fusion function
             # state = self.netFusion(h_x, state)
@@ -71,7 +70,6 @@ class TestModel(BaseModel):
             state = self.netFusion(in_cat)
             fusion_x = state # currently an identity function
             out_x.append(fusion_x)
-            out_y.append(reblur_A)
         self.out_x = out_x # keep the last estimation
         return out_x[-1]
 

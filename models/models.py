@@ -8,9 +8,12 @@ def create_model(opt):
 	model = None
         print("888888888888 %s " % opt.model)
 	if opt.model == 'test':
-		assert (opt.dataset_mode == 'single')
-		from .test_model import TestModel
-		model = TestModel()
+                if opt.dataset_mode == 'single':
+                        from .test_model import TestModel
+                        model = TestModel()
+                elif opt.dataset_mode == 'multi_test':
+                        from .test_model_multi import TestModel
+                        model = TestModel()
         elif opt.dataset_mode == 'multi':
                 print("888888888888 %s " % 'Multi')
 		model = ConditionalDualGANMulti()

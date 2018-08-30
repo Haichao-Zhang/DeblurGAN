@@ -40,6 +40,11 @@ def train(opt, data_loader, model, visualizer):
 					  (epoch, total_steps))
 				model.save('latest')
 
+		if epoch <= 1:
+			print('saving the model at the end of epoch %d, iters %d' %
+				  (epoch, total_steps))
+			model.save('latest')
+
 		if epoch % opt.save_epoch_freq == 0:
 			print('saving the model at the end of epoch %d, iters %d' %
 				  (epoch, total_steps))
