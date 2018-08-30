@@ -27,8 +27,8 @@ class MultiDataset(BaseDataset):
         #assert(opt.resize_or_crop == 'resize_and_crop')
 
         transform_list = [transforms.ToTensor(),
-                          #transforms.Normalize((0.5, 0.5, 0.5),
-                          #                     (0.5, 0.5, 0.5))
+                          transforms.Normalize((0.5, 0.5, 0.5),
+                                               (0.5, 0.5, 0.5))
                          ]
         transform_list_ker = [transforms.ToTensor()]
 
