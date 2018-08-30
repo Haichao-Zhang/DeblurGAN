@@ -19,6 +19,9 @@ def CreateDataset(opt):
     elif opt.dataset_mode == 'single':
         from data.single_dataset import SingleDataset
         dataset = SingleDataset()
+    elif opt.dataset_mode == 'multi_test':
+        from data.multi_dataset_test import MultiDatasetTest
+        dataset = MultiDatasetTest()
     else:
         raise ValueError("Dataset [%s] not recognized." % opt.dataset_mode)
 

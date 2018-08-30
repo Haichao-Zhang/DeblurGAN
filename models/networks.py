@@ -118,12 +118,12 @@ class F_net(nn.Module):
                 nn.ZeroPad2d(3),
                 nn.Conv2d(input_nc, ngf, kernel_size=7, padding=0,
                           bias=use_bias),
-                norm_layer(ngf),
+                #norm_layer(ngf),
                 nn.ReLU(True),
                 nn.ZeroPad2d(3),
                 nn.Conv2d(ngf, output_nc, kernel_size=7, padding=0,
                           bias=use_bias),
-                norm_layer(ngf),
+                #norm_layer(ngf),
                 nn.ReLU(True),
                 ]        
                 self.netG = nn.Sequential(*model)

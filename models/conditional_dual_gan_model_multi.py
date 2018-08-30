@@ -56,6 +56,7 @@ class ConditionalDualGANMulti(BaseModel):
 
 		if not self.isTrain or opt.continue_train:
 			self.load_network(self.netG, 'G', opt.which_epoch)
+			self.load_network(self.net_fusion, 'fusion', opt.which_epoch)
 			if self.isTrain:
 				self.load_network(self.netD, 'D', opt.which_epoch)
 
@@ -244,6 +245,7 @@ class ConditionalDualGANMulti(BaseModel):
 	def save(self, label):
 		self.save_network(self.netG, 'G', label, self.gpu_ids)
 		self.save_network(self.netD, 'D', label, self.gpu_ids)
+                self.save_network(self.net_fusion, 'fusion', label, self.gpu_ids)
 
 	def update_learning_rate(self):
 		lrd = self.opt.lr / self.opt.niter_decay
