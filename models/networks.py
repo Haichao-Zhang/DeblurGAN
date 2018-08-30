@@ -110,27 +110,38 @@ def define_E_fcn(input_nc, output_nc, ndf, which_model_netD,
 	return netE
 
 
-def define_fusion(input_nc, output_nc, ngf, which_model_netG, norm='batch', use_dropout=False, gpu_ids=[], use_parallel = True, learn_residual = False):
-	netG = None
-	use_gpu = len(gpu_ids) > 0
-	norm_layer = get_norm_layer(norm_type=norm)
-
-
-        # depth fusion net
-        model = [
+class F_net(nn.Module):
+        def __init__(self, input_nc, output_nc, ngf, use_bias):
+                super(F_net, self).__init__()
+                # depth fusion net
+                model = [
                 nn.ZeroPad2d(3),
                 nn.Conv2d(input_nc, ngf, kernel_size=7, padding=0,
                           bias=use_bias),
-                #norm_layer(ngf),
+                norm_layer(ngf),
                 nn.ReLU(True),
                 nn.ZeroPad2d(3),
                 nn.Conv2d(ngf, output_nc, kernel_size=7, padding=0,
                           bias=use_bias),
-                #norm_layer(ngf),
+                norm_layer(ngf),
                 nn.ReLU(True),
                 ]        
-        netG = nn.Sequential(*model)
+                self.netG = nn.Sequential(*model)
 
+        def forward(self, x):
+                return self.netG(x) + (x[:,0:3,:,:] + x[:,3:,:,:]) / 2.0
+
+def define_fusion(input_nc, output_nc, ngf, which_model_netG, norm='batch', use_dropout=False, gpu_ids=[], use_parallel = True, learn_residual = False):
+	netG = None
+	use_gpu = len(gpu_ids) > 0
+
+        norm_layer = get_norm_layer(norm_type=norm)
+        if type(norm_layer) == functools.partial:
+                use_bias = norm_layer.func == nn.InstanceNorm2d
+        else:
+                use_bias = norm_layer == nn.InstanceNorm2d
+
+        netF = F_net(input_nc, output_nc, ngf, use_bias)
         """
 	if use_gpu:
 		assert(torch.cuda.is_available())
@@ -147,10 +158,10 @@ def define_fusion(input_nc, output_nc, ngf, which_model_netG, norm='batch', use_
 		raise NotImplementedError('Generator model name [%s] is not recognized' % which_model_netG)
         """
 	if len(gpu_ids) > 0:
-		netG.cuda(gpu_ids[0])
-	netG.apply(weights_init)
+		netF.cuda(gpu_ids[0])
+	netF.apply(weights_init)
 
-	return netG
+	return netF
 
 
 # re-blur/observation model

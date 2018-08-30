@@ -51,7 +51,7 @@ class ConditionalDualGANMulti(BaseModel):
                                                       opt.n_layers_D, opt.norm, use_sigmoid, self.gpu_ids, use_parallel)
 
                         # define fusion network
-                        self.netFusion = networks.define_fusion(opt.input_nc * 1, opt.output_nc, opt.ngf,
+                        self.netFusion = networks.define_fusion(opt.input_nc * 2, opt.output_nc, opt.ngf,
                                               opt.which_model_netG, opt.norm, not opt.no_dropout, self.gpu_ids, use_parallel, opt.learn_residual)
 
 		if not self.isTrain or opt.continue_train:
@@ -116,7 +116,10 @@ class ConditionalDualGANMulti(BaseModel):
                         h_x = self.netG.forward(yi) # hidden state for x
                         # fusion function
                         # state = self.netFusion(h_x, state)
-                        in_cat = torch.cat((h_x, state), 1)
+                        if i == 0:
+                                in_cat = torch.cat((h_x, h_x), 1)
+                        else:
+                                in_cat = torch.cat((h_x, state), 1)
                         """
                         if i == 0:
                                 in_cat = h_x
