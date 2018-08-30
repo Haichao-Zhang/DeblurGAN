@@ -48,7 +48,7 @@ for i, data in enumerate(dataset):
 	img_path = model.get_image_paths()
 	print('process image... %s' % img_path)
 	visualizer.save_images(webpage, visuals, img_path)
-        cv2.imwrite('./db.bmp', visuals['fake_B']*255)
+        cv2.imwrite('./db.bmp', visuals['fake_B'])
 
 #avgPSNR /= counter
 #avgSSIM /= counter

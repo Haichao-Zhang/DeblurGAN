@@ -29,8 +29,8 @@ class MultiDatasetTest(BaseDataset):
         #assert(opt.resize_or_crop == 'resize_and_crop')
 
         transform_list = [transforms.ToTensor(),
-                          #transforms.Normalize((0.5, 0.5, 0.5),
-                          #                     (0.5, 0.5, 0.5))
+                          transforms.Normalize((0.5, 0.5, 0.5),
+                                               (0.5, 0.5, 0.5))
                          ]
 
         self.transform = transforms.Compose(transform_list)
@@ -63,11 +63,11 @@ class MultiDatasetTest(BaseDataset):
                 w_offset = random.randint(0, max(0, w - self.opt.fineSize - 1))
             if h_offset < 0:
                 h_offset = random.randint(0, max(0, h - self.opt.fineSize - 1))
-            print(y)
+            
 
             y = y[:, h_offset:h_offset + self.opt.fineSize,
                   w_offset:w_offset + self.opt.fineSize]
-            print(y)
+            
             blurry_set.append(y)
 
         print(blurry_set)

@@ -11,7 +11,11 @@ import collections
 # |imtype|: the desired type of the converted numpy array
 def tensor2im(image_tensor, imtype=np.uint8):
 	image_numpy = image_tensor[0].cpu().float().numpy()
+        # this is the renormalization
+        # inversing to the Tansform([0.5, 0.5])
 	image_numpy = (np.transpose(image_numpy, (1, 2, 0)) + 1) / 2.0 * 255.0
+        image_numpy[image_numpy < 0] = 0
+        image_numpy[image_numpy > 255] = 255
 	return image_numpy.astype(imtype)
 
 

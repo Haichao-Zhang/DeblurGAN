@@ -49,8 +49,7 @@ for i, data in enumerate(dataset):
 	#print('process image... %s' % img_path)
         # later can write results into a webpage
 	#visualizer.save_images(webpage, visuals, img_path)
-        print(visuals['Restored_Train'])
-        cv2.imwrite('./db.bmp', visuals['Restored_Train'] * 255)
+        cv2.imwrite('./db.bmp', visuals['Restored_Train'])
 
 #avgPSNR /= counter
 #avgSSIM /= counter
