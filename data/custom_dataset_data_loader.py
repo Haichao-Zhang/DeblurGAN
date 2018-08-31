@@ -20,8 +20,8 @@ def CreateDataset(opt):
         from data.single_dataset import SingleDataset
         dataset = SingleDataset()
     elif opt.dataset_mode == 'multi_test':
-        from data.multi_dataset_test import MultiDatasetTest
-        dataset = MultiDatasetTest()
+        from data.multi_dataset import MultiDataset
+        dataset = MultiDataset()
     else:
         raise ValueError("Dataset [%s] not recognized." % opt.dataset_mode)
 

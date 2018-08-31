@@ -56,10 +56,13 @@ class ConditionalDualGANMulti(BaseModel):
                                               opt.which_model_netG, opt.norm, not opt.no_dropout, self.gpu_ids, use_parallel, opt.learn_residual)
 
 		if not self.isTrain or opt.continue_train:
+                        print("--------continue training")
 			self.load_network(self.netG, 'G', opt.which_epoch)
 			self.load_network(self.netFusion, 'fusion', opt.which_epoch)
+                        """
 			if self.isTrain:
 				self.load_network(self.netD, 'D', opt.which_epoch)
+                        """
 
 		if self.isTrain:
 			self.old_lr = opt.lr
@@ -136,10 +139,11 @@ class ConditionalDualGANMulti(BaseModel):
                         out_x.append(fusion_x)
                         #out_y.append(reblur_A)
 
-                # batch reblur
-                for i, ki in enumerate( self.in_k):
-                        reblur_A = self.netB.forward(out_x[-1], ki.unsqueeze(0))
-                        out_y.append(reblur_A)
+                if self.opt.isTrain:
+                        # batch reblur
+                        for i, ki in enumerate( self.in_k):
+                                reblur_A = self.netB.forward(out_x[-1], ki.unsqueeze(0))
+                                out_y.append(reblur_A)
                 
                 self.out_x = out_x
                 self.out_y = out_y
@@ -218,8 +222,10 @@ class ConditionalDualGANMulti(BaseModel):
 
 	def get_current_visuals(self):
                 vis = OrderedDict()
-		sharp_real = util.tensor2im(self.real_x.data)
-                vis['Sharp_Train'] = sharp_real
+                if self.opt.isTrain:
+                        sharp_real = util.tensor2im(self.real_x.data)
+                        vis['Sharp_Train'] = sharp_real
+
 		sharp_est = util.tensor2im(self.out_x[-1].data) # the last estimate
 
                 vis['Restored_Train'] = sharp_est

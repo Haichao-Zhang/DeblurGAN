@@ -4,6 +4,7 @@ from data.data_loader import CreateDataLoader
 from models.models import create_model
 from util.visualizer import Visualizer
 from util.metrics import PSNR, SSIM
+import cv2
 
 def train(opt, data_loader, model, visualizer):
 	dataset = data_loader.load_data()
@@ -40,10 +41,13 @@ def train(opt, data_loader, model, visualizer):
 					  (epoch, total_steps))
 				model.save('latest')
                                 
-                        if epoch <= 1 and i % 200 == 0 and i != 0:
+                        if epoch <= 1 and i % 5 == 0 and i != 0:
                                 print('saving the model at the end of epoch %d, iters %d' %
 				  (epoch, total_steps))
-                                model.save('latest')
+                                visuals = model.get_current_visuals()
+                                cv2.imwrite('./db.bmp', cv2.cvtColor(visuals['Restored_Train'], cv2.COLOR_RGB2BGR))
+                                cv2.imwrite('./b1.bmp', cv2.cvtColor(visuals['blurry1'], cv2.COLOR_RGB2BGR))
+                                #model.save('latest')
 
 		if epoch % opt.save_epoch_freq == 0:
 			print('saving the model at the end of epoch %d, iters %d' %

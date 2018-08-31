@@ -38,9 +38,15 @@ class MultiDataset(BaseDataset):
     def __getitem__(self, index):
         # get the sharp image, and the set of blurry-kernel pairs
 
-        sharp_path = self.sharp_paths[index]
-        sharp = Image.open(sharp_path).convert('RGB')
-        sharp = self.transform(sharp)        
+        #sharp_path = self.sharp_paths[index]
+        #sharp = Image.open(sharp_path).convert('RGB')
+        #sharp = self.transform(sharp)        
+
+        sharp = None
+        if len(self.sharp_paths) != 0:
+            sharp_path = self.sharp_paths[index]
+            sharp = Image.open(sharp_path).convert('RGB')
+            sharp = self.transform(sharp)
 
         w = sharp.size(2)
         h = sharp.size(1)
@@ -56,12 +62,13 @@ class MultiDataset(BaseDataset):
         
         blurry_set = []
         kernel_set = []
-        for yp, kp in zip(y_paths, k_paths):
+        for yp in y_paths:
             y = Image.open(yp).convert('RGB')
             y = self.transform(y)
             y = y[:, h_offset:h_offset + self.opt.fineSize,
                   w_offset:w_offset + self.opt.fineSize]
             blurry_set.append(y)
+        for kp in k_paths:
             k = Image.open(kp)
             k = self.transform_ker(k)
             k_arr = k.numpy()
@@ -76,7 +83,7 @@ class MultiDataset(BaseDataset):
                 }
 
     def __len__(self):
-        return len(self.sharp_paths)
+        return len(self.blurry_paths)
 
     def name(self):
         return 'MultiDataset'
