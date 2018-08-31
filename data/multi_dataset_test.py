@@ -51,13 +51,14 @@ class MultiDatasetTest(BaseDataset):
         
         blurry_set = []
         kernel_set = []
-        w_offset = -1
-        h_offset = -1
+        w_offset = 100
+        h_offset = 150
         for yp in y_paths:
             y = Image.open(yp).convert('RGB')
             y = self.transform(y)
             w = sharp.size(2)
             h = sharp.size(1)
+            self.opt.fineSize = 200
             # perform cropping
             if w_offset < 0:
                 w_offset = random.randint(0, max(0, w - self.opt.fineSize - 1))
@@ -70,14 +71,14 @@ class MultiDatasetTest(BaseDataset):
             
             blurry_set.append(y)
 
-        print(blurry_set)
+        
         return {'sharp': sharp,
                 'blurry_set': blurry_set, 
                 'kernel_set': kernel_set,
                 }
 
     def __len__(self):
-        return len(self.sharp_paths)
+        return len(self.blurry_paths)
 
     def name(self):
         return 'MultiDatasetTest'

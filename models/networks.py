@@ -126,13 +126,13 @@ class F_net(nn.Module):
                 #norm_layer(ngf),
                 nn.ReLU(True),
                 ]        
-                self.netG = nn.Sequential(*model)
+                self.model = nn.Sequential(*model)
 
         def forward(self, x):
-                return self.netG(x) + (x[:,0:3,:,:] + x[:,3:,:,:]) / 2.0
+                return self.model(x) + (x[:,0:3,:,:] + x[:,3:,:,:]) / 2.0
 
 def define_fusion(input_nc, output_nc, ngf, which_model_netG, norm='batch', use_dropout=False, gpu_ids=[], use_parallel = True, learn_residual = False):
-	netG = None
+	netF = None
 	use_gpu = len(gpu_ids) > 0
 
         norm_layer = get_norm_layer(norm_type=norm)

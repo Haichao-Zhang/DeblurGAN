@@ -12,8 +12,9 @@ def create_model(opt):
                         from .test_model import TestModel
                         model = TestModel()
                 elif opt.dataset_mode == 'multi_test':
-                        from .test_model_multi import TestModel
-                        model = TestModel()
+                        print("multi-test-----")
+                        from .test_model_multi import TestModelMulti
+                        model = TestModelMulti()
         elif opt.dataset_mode == 'multi':
                 print("888888888888 %s " % 'Multi')
 		model = ConditionalDualGANMulti()

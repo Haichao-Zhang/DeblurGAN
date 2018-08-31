@@ -10,6 +10,7 @@ from util.metrics import PSNR
 from util.metrics import SSIM
 from PIL import Image
 import cv2
+import numpy as np
 
 opt = TestOptions().parse()
 opt.nThreads = 1   # test code only supports nThreads = 1
@@ -28,7 +29,7 @@ model = create_model(opt)
 visualizer = Visualizer(opt)
 # create website
 web_dir = os.path.join(opt.results_dir, opt.name, '%s_%s' % (opt.phase, opt.which_epoch))
-webpage = html.HTML(web_dir, 'Experiment = %s, Phase = %s, Epoch = %s' % (opt.name, opt.phase, opt.which_epoch))
+webpage = html.HTML(web_dir, 'Experiment = %s, Phase = %s, Epoch = %s' % ('db', opt.phase, opt.which_epoch))
 # test
 avgPSNR = 0.0
 avgSSIM = 0.0
@@ -49,7 +50,14 @@ for i, data in enumerate(dataset):
 	#print('process image... %s' % img_path)
         # later can write results into a webpage
 	#visualizer.save_images(webpage, visuals, img_path)
-        cv2.imwrite('./db.bmp', visuals['Restored_Train'])
+        img = np.zeros((visuals['Restored_Train'].shape[0], visuals['Restored_Train'].shape[1], 3))
+        #img[:,:,0] = visuals['Restored_Train']
+        #img[:,:,1] = visuals['Restored_Train']
+        #img[:,:,2] = visuals['Restored_Train']
+        #cv2.imwrite('./db.bmp', img)
+        print(visuals['Restored_Train'].shape)
+        cv2.imwrite('./db.bmp', cv2.cvtColor(visuals['Restored_Train'], cv2.COLOR_RGB2BGR))
+        cv2.imwrite('./b1.bmp', cv2.cvtColor(visuals['blurry1'], cv2.COLOR_RGB2BGR))
 
 #avgPSNR /= counter
 #avgSSIM /= counter

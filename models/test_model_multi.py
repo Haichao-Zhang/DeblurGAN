@@ -6,9 +6,9 @@ from . import networks
 import torch
 
 
-class TestModel(BaseModel):
+class TestModelMulti(BaseModel):
     def name(self):
-        return 'TestModel'
+        return 'TestModelMulti'
 
     def initialize(self, opt):
         assert(not opt.isTrain)
@@ -28,6 +28,15 @@ class TestModel(BaseModel):
                                                 self.gpu_ids, False,
                                                 opt.learn_residual)
 
+        for param in self.netG.parameters():
+            param.data *=0
+        for param in self.netFusion.parameters():
+            param.data *= 0
+
+        #for param in self.netG.parameters():
+        #    print(param.data)
+        for param in self.netFusion.parameters():
+            print(param.data)
 
         which_epoch = opt.which_epoch
         self.load_network(self.netG, 'G', which_epoch)
@@ -37,6 +46,12 @@ class TestModel(BaseModel):
         networks.print_network(self.netG)
         networks.print_network(self.netFusion)
         print('-----------------------------------------------')
+        #for param in self.netG.parameters():
+        #    print(param.data)
+        s = [len(p.reshape(-1)) for p in self.netFusion.parameters()]
+        print("---- total %s" % sum(s))
+        for param in self.netFusion.parameters():
+            print(param.data)
 
     def set_input(self, input):
         def to_cuda(cpu_data):
@@ -50,9 +65,6 @@ class TestModel(BaseModel):
         self.obs_num = len(self.in_y)
 
     def test(self):
-        self.deblur = self.forward()
-
-    def forward(self):
         state = self.init_state
 
         out_x = []
@@ -60,6 +72,7 @@ class TestModel(BaseModel):
         # recurrent forwarding
         #for i in range(self.obs_num)):
         for i, yi in enumerate(self.in_y):
+            print("observation %s" % i)
             h_x = self.netG.forward(yi) # hidden state for x
             # fusion function
             # state = self.netFusion(h_x, state)
@@ -68,10 +81,11 @@ class TestModel(BaseModel):
             else:
                 in_cat = torch.cat((h_x, state), 1)
             state = self.netFusion(in_cat)
-            fusion_x = state # currently an identity function
+            fusion_x = state# currently an identity function
             out_x.append(fusion_x)
         self.out_x = out_x # keep the last estimation
-        return out_x[-1]
+        self.deblur = out_x[-1]
+        #self.deblur = (out_x[-1] + self.in_y[-1]) / 2
 
     # get image paths
     def get_image_paths(self):
@@ -81,7 +95,7 @@ class TestModel(BaseModel):
     
         vis = OrderedDict()
 
-        sharp_est = util.tensor2im(self.out_x[-1].data) # the last estimate
+        sharp_est = util.tensor2im_mine(self.deblur.data)*255 # the last estimate
 
         vis['Restored_Train'] = sharp_est
  
