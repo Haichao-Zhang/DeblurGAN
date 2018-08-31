@@ -132,13 +132,13 @@ class ConditionalDualGANMulti(BaseModel):
                         #state = (h_x + state) / 2 # simple average fusion
                         fusion_x = state # currently an identity function
                         # now using the true kernel for constructing the observation process
-                        reblur_A = self.netB.forward(fusion_x, ki.unsqueeze(0))
+                        #reblur_A = self.netB.forward(fusion_x, ki.unsqueeze(0))
                         out_x.append(fusion_x)
-                        out_y.append(reblur_A)
+                        #out_y.append(reblur_A)
 
                 # batch reblur
-                for i, (xi, ki) in enumerate(zip(out_x, self.in_k)):
-                        reblur_A = self.netB.forward(xi, ki.unsqueeze(0))
+                for i, ki in enumerate( self.in_k):
+                        reblur_A = self.netB.forward(out_x[-1], ki.unsqueeze(0))
                         out_y.append(reblur_A)
                 
                 self.out_x = out_x
