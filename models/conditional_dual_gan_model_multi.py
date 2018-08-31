@@ -114,7 +114,7 @@ class ConditionalDualGANMulti(BaseModel):
                 out_y = []
                 # recurrent forwarding
                 #for i in range(self.obs_num)):
-                for i, (yi, ki) in enumerate(zip(self.in_y, self.in_k)):
+                for i, yi  in enumerate(self.in_y):
                         h_x = self.netG.forward(yi) # hidden state for x
                         # fusion function
                         # state = self.netFusion(h_x, state)
@@ -150,28 +150,6 @@ class ConditionalDualGANMulti(BaseModel):
                 self.forward()
                 print(self.out_x)
                 self.deblur = self.out_x[-1]
-        def test(self):
-                state = self.init_state
-
-                out_x = []
-                out_y = []
-                # recurrent forwarding
-                #for i in range(self.obs_num)):
-                for i, yi in enumerate(self.in_y):
-                        print("observation %s" % i)
-                        h_x = self.netG.forward(yi) # hidden state for x
-                        # fusion function
-                        # state = self.netFusion(h_x, state)
-                        if i == 0:
-                                in_cat = torch.cat((h_x, h_x), 1)
-                        else:
-                                in_cat = torch.cat((h_x, state), 1)
-                        state = self.netFusion(in_cat)
-                        fusion_x = state# currently an identity function
-                        out_x.append(fusion_x)
-                self.out_x = out_x # keep the last estimation
-                self.deblur = out_x[-1]
-                self.out_y = []
 
 
 	# get image paths
