@@ -50,13 +50,14 @@ class ConditionalDualGANMulti(BaseModel):
                                                       opt.which_model_netD,
                                                       opt.n_layers_D, opt.norm, use_sigmoid, self.gpu_ids, use_parallel)
 
-                        # define fusion network
-                        self.netFusion = networks.define_fusion(opt.input_nc * 2, opt.output_nc, opt.ngf,
+                # define netFusion regardless of training or testing
+                # define fusion network
+                self.netFusion = networks.define_fusion(opt.input_nc * 2, opt.output_nc, opt.ngf,
                                               opt.which_model_netG, opt.norm, not opt.no_dropout, self.gpu_ids, use_parallel, opt.learn_residual)
 
 		if not self.isTrain or opt.continue_train:
 			self.load_network(self.netG, 'G', opt.which_epoch)
-			self.load_network(self.net_fusion, 'fusion', opt.which_epoch)
+			self.load_network(self.netFusion, 'fusion', opt.which_epoch)
 			if self.isTrain:
 				self.load_network(self.netD, 'D', opt.which_epoch)
 
@@ -146,9 +147,32 @@ class ConditionalDualGANMulti(BaseModel):
 
 	# no backprop gradients
 	def test(self):
-		self.real_A = Variable(self.input_A, volatile=True)
-		self.fake_B = self.netG.forward(self.real_A)
-		self.real_B = Variable(self.input_B, volatile=True)
+                self.forward()
+                print(self.out_x)
+                self.deblur = self.out_x[-1]
+        def test(self):
+                state = self.init_state
+
+                out_x = []
+                out_y = []
+                # recurrent forwarding
+                #for i in range(self.obs_num)):
+                for i, yi in enumerate(self.in_y):
+                        print("observation %s" % i)
+                        h_x = self.netG.forward(yi) # hidden state for x
+                        # fusion function
+                        # state = self.netFusion(h_x, state)
+                        if i == 0:
+                                in_cat = torch.cat((h_x, h_x), 1)
+                        else:
+                                in_cat = torch.cat((h_x, state), 1)
+                        state = self.netFusion(in_cat)
+                        fusion_x = state# currently an identity function
+                        out_x.append(fusion_x)
+                self.out_x = out_x # keep the last estimation
+                self.deblur = out_x[-1]
+                self.out_y = []
+
 
 	# get image paths
 	def get_image_paths(self):
@@ -221,14 +245,17 @@ class ConditionalDualGANMulti(BaseModel):
 		sharp_est = util.tensor2im(self.out_x[-1].data) # the last estimate
 
                 vis['Restored_Train'] = sharp_est
-		reblur = util.tensor2im(self.out_y[-1].data) # the last estimate
-                vis['reblur'] = reblur
+                if len(self.out_y) > 0:
+                        reblur = util.tensor2im(self.out_y[-1].data) # the last estimate
+                        vis['reblur'] = reblur
                 # in_y
                 # in_k
-                for i, (yi, ki) in enumerate(zip(self.in_y, self.in_k)):
+                for i, yi in enumerate(self.in_y):
                         blurry = util.tensor2im(yi.data)
-                        kernel = util.tensor2psf(ki.squeeze(0).data) # remove the singlton batch dim
                         vis['blurry'+str(i)] = blurry
+
+                for i, ki in enumerate(self.in_k):
+                        kernel = util.tensor2psf(ki.squeeze(0).data) # remove the singlton batch dim
                         vis['kernel'+str(i)] = kernel
 
                 return vis

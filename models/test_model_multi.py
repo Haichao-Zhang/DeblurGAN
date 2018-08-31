@@ -48,8 +48,11 @@ class TestModelMulti(BaseModel):
         print('-----------------------------------------------')
         #for param in self.netG.parameters():
         #    print(param.data)
+        s = [len(p.reshape(-1)) for p in self.netG.parameters()]
+        print("---- G total %s" % sum(s))
+
         s = [len(p.reshape(-1)) for p in self.netFusion.parameters()]
-        print("---- total %s" % sum(s))
+        print("---- F total %s" % sum(s))
         for param in self.netFusion.parameters():
             print(param.data)
 
@@ -95,7 +98,7 @@ class TestModelMulti(BaseModel):
     
         vis = OrderedDict()
 
-        sharp_est = util.tensor2im_mine(self.deblur.data)*255 # the last estimate
+        sharp_est = util.tensor2im(self.deblur.data) # the last estimate
 
         vis['Restored_Train'] = sharp_est
  
