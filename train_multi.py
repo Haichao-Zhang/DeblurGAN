@@ -41,13 +41,14 @@ def train(opt, data_loader, model, visualizer):
 					  (epoch, total_steps))
 				model.save('latest')
                                 
-                        if epoch <= 1 and i % 5 == 0 and i != 0:
-                                print('saving the model at the end of epoch %d, iters %d' %
-				  (epoch, total_steps))
+                        if opt.phase == 'test':
                                 visuals = model.get_current_visuals()
-                                cv2.imwrite('./db.bmp', cv2.cvtColor(visuals['Restored_Train'], cv2.COLOR_RGB2BGR))
-                                cv2.imwrite('./b1.bmp', cv2.cvtColor(visuals['blurry1'], cv2.COLOR_RGB2BGR))
-                                #model.save('latest')
+                                print("dir  %s" % opt.results_dir)
+                                cv2.imwrite(opt.results_dir + '/db.bmp', cv2.cvtColor(visuals['Restored_Train'], cv2.COLOR_RGB2BGR))
+                                cv2.imwrite(opt.results_dir + '/b1.bmp', cv2.cvtColor(visuals['blurry1'], cv2.COLOR_RGB2BGR))
+
+                if opt.phase == 'test':
+                        break
 
 		if epoch % opt.save_epoch_freq == 0:
 			print('saving the model at the end of epoch %d, iters %d' %

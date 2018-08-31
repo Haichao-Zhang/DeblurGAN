@@ -43,7 +43,7 @@ class BaseOptions():
 		self.parser.add_argument('--resize_or_crop', type=str, default='resize_and_crop', help='scaling and cropping of images at load time [resize_and_crop|crop|scale_width|scale_width_and_crop]')
 		self.parser.add_argument('--no_flip', action='store_true', help='if specified, do not flip the images for data augmentation')
 		self.parser.add_argument('--no_clip', type=bool, default=True,  help='if specified, do not clip the images for data augmentation')
-
+                self.parser.add_argument('--results_dir', type=str, default='./results/', help='saves results here.')
 		self.initialized = True
 
 	def parse(self):

@@ -1,0 +1,1 @@
+python train_multi.py --dataroot ../../data/blurred_sharp_org/blurred_sharp/db_test --learn_residual --resize_or_crop crop --fineSize 256 --input_nc 3 --output_nc 3 --phase test --continue_train --results_dir ../../data/blurred_sharp_org/blurred_sharp/db_result --which_epoch 80
